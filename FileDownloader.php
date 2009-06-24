@@ -8,7 +8,7 @@
  *
  * @author     Jan Kuchař
  * @copyright  Copyright (c) 2009 Jan Kuchař (http://mujserver.net)
- * @license    http://nettephp.com/license  Nette license
+ * @license    http://nettephp.com/license Nette license
  * @link       http://mujserver.net
  */
 
@@ -64,31 +64,31 @@ class FileDownloader extends Object
    *    + internal readfile function - supports
    *      partial downloads and is faster than readFile()
    *
-   * @param string $fileLocation  Location of source file
+   * @param string $location  Location of source file
    * @param string $filename      File name with witch will be file sent to browser. for example: "test.jpg"
    * @param string $mimeType      Mimetype of the file.
    * @param int    $speedLimiter  Limits file download speed
    * @param string $terminate     Terminate script after download completes
    */
-  public static function download($fileLocation, $filename=null, $mimeType=null,$speedLimiter=null,$terminate=true)
+  static function download($location, $filename=null, $mimeType=null,$speedLimiter=null,$terminate=true)
   {
     if($speedLimiter===null or $speedLimiter<0 or !is_int($speedLimiter))
       $speedLimiter=self::$maxDownloadSpeed;
 
-    if(!file_exists($fileLocation))
-      throw new InvalidArgumentException("File not found!",404);
+    if(!file_exists($location))
+      throw new BadRequestException("File not found!",404);
 
-    if(!is_file($fileLocation))
+    if(!is_file($location))
       throw new InvalidStateException("The specified location do not point at file!");
 
-    if(!is_readable($fileLocation))
+    if(!is_readable($location))
       throw new InvalidStateException("File is not readable!");
 
     if($speedLimiter<0)
       throw new InvalidArgumentException("Download rate must be a non-negative number. ( \$dr >= 0 )");
 
     if($filename===null)
-      $filename = pathinfo($fileLocation, PATHINFO_BASENAME);
+      $filename = pathinfo($location, PATHINFO_BASENAME);
 
     if($mimeType === null)
       $mimeType = self::getMimeType($filename);
@@ -112,7 +112,7 @@ class FileDownloader extends Object
     $res->setHeader('Content-Description', 'File Transfer');
     $res->setHeader('Content-Transfer-Encoding', 'binary');
     $res->setHeader('Connection', 'close');
-    $res->setHeader('ETag', self::getETag($fileLocation));
+    $res->setHeader('ETag', self::getETag($location));
 
 
 
@@ -125,13 +125,13 @@ class FileDownloader extends Object
     }
 
     if($fastDownload === TRUE){
-      self::_sendFileToBrowser($fileLocation,$speedLimit,$step);
+      self::_sendFileToBrowser($location,$speedLimit,$step);
     }else{ // Přečteme soubor standardním způsobem - nepodporuje omezování rychlosti
-      $res->setHeader('Content-Length', filesize($fileLocation));
+      $res->setHeader('Content-Length', filesize($location));
       $res->setHeader('Accept-Ranges', "none");
       if($req->getHeader("Range"))
         self::_HTTPError(416);
-      readfile($fileLocation);
+      readfile($location);
     }
     if($terminate === TRUE)
       die();
@@ -166,7 +166,7 @@ class FileDownloader extends Object
         return $mimetypes[$ex];
       else
         return "application/octet-stream";
-    //}
+    /*}*/
   }
 
   /**
@@ -177,16 +177,17 @@ class FileDownloader extends Object
    * time limit gone before file download ends file may
    * be corrupted!
    *
-   * @param string $fileLocation  File location
+   * @param string $location      File location
    * @param int $start            Start byte
    * @param int $end              End byte
    * @param bool $speedLimit      Use buffer value as bytes per second?
    * @param int $buffer           Buffer size
    */
-  public static function readFile($fileLocation,$start=0,$end=null,$speedLimit=false,$buffer=16){
-    $fp = fopen($fileLocation,"rb");
+  public static function readFile($location,$start=0,$end=null,$speedLimit=false,$buffer=16)
+  {
+    $fp = fopen($location,"rb");
     if(!$fp) throw new InvalidStateException("Can't open file for reading!");
-    if($end===null) $end = filesize($fileLocation);
+    if($end===null) $end = filesize($location);
     fseek($fp, $start); // Move file pointer to the start of the download
 		while(!feof($fp) && ($p = ftell($fp)) <= $end)
 		{
