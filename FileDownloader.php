@@ -36,14 +36,14 @@ class FileDownloader extends Object
    * 0 is unlimited
    * @var int
    */
-  static public $maxDownloadSpeed = 0;
+  public static $maxDownloadSpeed = 0;
 
   /**
    * Kbytes sent in one cycle. (for speed tuning)
    * This tweak work only when speed limiter is disabled!
    * @var int
    */
-  static public $stepSize = 16;
+  public static $stepSize = 16;
 
 	/**
 	 * Static class - cannot be instantiated.
@@ -67,10 +67,10 @@ class FileDownloader extends Object
    * @param string $fileLocation  Location of source file
    * @param string $filename      File name with witch will be file sent to browser. for example: "test.jpg"
    * @param string $mimeType      Mimetype of the file.
-   * @param string $speedLimiter  Limits file download speed
+   * @param int    $speedLimiter  Limits file download speed
    * @param string $terminate     Terminate script after download completes
    */
-  static function download($fileLocation, $filename=null, $mimeType=null,$speedLimiter=null,$terminate=true)
+  public static function download($fileLocation, $filename=null, $mimeType=null,$speedLimiter=null,$terminate=true)
   {
     if($speedLimiter===null or $speedLimiter<0 or !is_int($speedLimiter))
       $speedLimiter=self::$maxDownloadSpeed;
@@ -138,7 +138,7 @@ class FileDownloader extends Object
   }
 
   /**
-   * Identifies a most used mime types
+   * Returns mimetype of the file
    * @param string $location  Location to file
    * @return string           Mime type
    */
@@ -168,6 +168,42 @@ class FileDownloader extends Object
         return "application/octet-stream";
     //}
   }
+
+  /**
+   * Send file to browser. (enhanced readfile())
+   * This function do not send any headers!
+   *
+   * It is strongly recomended to set_time_limit(0). If
+   * time limit gone before file download ends file may
+   * be corrupted!
+   *
+   * @param string $fileLocation  File location
+   * @param int $start            Start byte
+   * @param int $end              End byte
+   * @param bool $speedLimit      Use buffer value as bytes per second?
+   * @param int $buffer           Buffer size
+   */
+  public static function readFile($fileLocation,$start=0,$end=null,$speedLimit=false,$buffer=16){
+    $fp = fopen($fileLocation,"rb");
+    if(!$fp) throw new InvalidStateException("Can't open file for reading!");
+    if($end===null) $end = filesize($fileLocation);
+    fseek($fp, $start); // Move file pointer to the start of the download
+		while(!feof($fp) && ($p = ftell($fp)) <= $end)
+		{
+			if ($p + $buffer > $end)
+			{
+				// In case we're only outputtin a chunk, make sure we don't
+				// read past the length
+				$buffer = $end - $p + 1;
+			}
+			echo fread($fp, $buffer);
+			flush();
+      if($speedLimit===true) sleep(1);
+		}
+    fclose($fp);
+  }
+
+  /* Now private functions */
 
   /**
    * Generates ETag and returns
@@ -266,40 +302,6 @@ class FileDownloader extends Object
     $res->setHeader("Content-Length",$length);
 
     self::readFile($fileLocation, $start, $end,$speedLimit, 1024 * $step);
-  }
-
-  /**
-   * Send file to browser. (enhanced readfile())
-   * This function do not send any headers!
-   *
-   * It is strongly recomended to set_time_limit(0). If
-   * time limit gone before file download ends file may
-   * be corrupted!
-   *
-   * @param string $fileLocation  File location
-   * @param int $start            Start byte
-   * @param int $end              End byte
-   * @param bool $speedLimit      Use buffer value as bytes per second?
-   * @param int $buffer           Buffer size
-   */
-  public static function readFile($fileLocation,$start=0,$end=null,$speedLimit=false,$buffer=16){
-    $fp = fopen($fileLocation,"rb");
-    if(!$fp) throw new InvalidStateException("Can't open file for reading!");
-    if($end===null) $end = filesize($fileLocation);
-    fseek($fp, $start); // Move file pointer to the start of the download
-		while(!feof($fp) && ($p = ftell($fp)) <= $end)
-		{
-			if ($p + $buffer > $end)
-			{
-				// In case we're only outputtin a chunk, make sure we don't
-				// read past the length
-				$buffer = $end - $p + 1;
-			}
-			echo fread($fp, $buffer);
-			flush();
-      if($speedLimit===true) sleep(1);
-		}
-    fclose($fp);
   }
 
   /**
