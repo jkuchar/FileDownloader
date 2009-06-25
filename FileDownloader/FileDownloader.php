@@ -94,8 +94,8 @@ class FileDownloader extends Object
    *
    * @link http://www.thomthom.net/blog/2007/09/php-resumable-download-server/
    *
-   * @param string $location  Location of source file
-   * @param string $filename      File name with witch will be file sent to browser. for example: "test.jpg"
+   * @param string $location      Location of source file
+   * @param string $filename      File name with witch will be file sent to browser. for example: "test.jpg". UTF-8 encoded!
    * @param string $mimeType      Mimetype of the file.
    * @param int    $speedLimiter  Limits file download speed
    * @param string $terminate     Terminate script after download completes
@@ -133,12 +133,13 @@ class FileDownloader extends Object
     $res = Environment::getHttpResponse();
     $req = Environment::getHttpRequest();
 
-    $res->setContentType($mimeType);
+    $res->setContentType($mimeType,"UTF-8");
 
     $res->setHeader('Expires', '0');
     $res->setHeader('Cache-Control', 'must-revalidate, post-check=0, pre-check=0');
     $res->setHeader('Pragma', 'public'); // Fix for IE - Content-Disposition
-    $res->setHeader('Content-Disposition', 'attachment; filename='.self::_getContentDispositionHeaderData($filename));
+    /* ?? ENDODING OF FILENAME ?? */
+    $res->setHeader('Content-Disposition', 'attachment; filename="'.self::_getContentDispositionHeaderData($filename).'"');
     $res->setHeader('Content-Description', 'File Transfer');
     $res->setHeader('Content-Transfer-Encoding', 'binary');
     $res->setHeader('Connection', 'close');
