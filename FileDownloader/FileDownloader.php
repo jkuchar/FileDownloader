@@ -71,6 +71,14 @@ class FileDownloader extends Object
    */
   public static $stepSize = 16;
 
+  /**
+   * Check time limit? If time limit is not unlimited,
+   * this script is automatically switched to compatibility
+   * mode.
+   * @var bool
+   */
+  public static $checkTimeLimit = true;
+
 	/**
 	 * Static class - cannot be instantiated.
 	 */
@@ -123,9 +131,17 @@ class FileDownloader extends Object
     if($mimeType === null)
       $mimeType = self::getMimeType($filename);
 
-    $fastDownload = self::_configEnvironment(); // On success returns TRUE
+    $fullMode = false;
+    try {
+      $fullMode = self::_configEnvironment(); // On success returns TRUE
+    } catch (Exception $e) {
+      if(self::$checkTimeLimit===true) throw $e;
+    }
+    if(self::$checkTimeLimit!==true)
+      $fullMode = true; // Rewrite autodetection
 
-    if($fastDownload === FALSE and $speedLimiter!==0)
+
+    if($fullMode === FALSE and $speedLimiter!==0)
       throw new InvalidStateException("Set_time_limit or ini_set function must be allowed when you want to use speed limits. You must disable speed limits (set to 0) to be able to use FileDownloader without set_time_limit or ini_set function.");
 
     /* ------------------------------------------------------------- */
@@ -155,7 +171,7 @@ class FileDownloader extends Object
       $step       = $speedLimiter;
     }
 
-    if($fastDownload === TRUE){
+    if($fullMode===TRUE){
       self::_sendFileToBrowser($location,$speedLimit,$step);
     }else{ // Přečteme soubor standardním způsobem - nepodporuje omezování rychlosti
       $res->setHeader('Content-Length', filesize($location));
@@ -166,7 +182,7 @@ class FileDownloader extends Object
         throw new InvalidStateException("External readfile() function fails!");
       }
     }
-    if($terminate === TRUE)
+    if($terminate===TRUE)
       die();
   }
 
