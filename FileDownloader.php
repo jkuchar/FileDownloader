@@ -8,8 +8,8 @@
  *
  * @author     Jan Kuchař
  * @copyright  Copyright (c) 2009 Jan Kuchař (http://mujserver.net)
- * @license    http://nettephp.com/license Nette license
- * @link       http://mujserver.net
+ * @license    New BSD License
+ * @link       http://filedownloader.projekty.mujserver.net
  */
 
 /**
@@ -19,9 +19,11 @@
  *  + partial downloads
  *  + speed limits
  *  + auto mime type detection
+ *
  * Original script from:  http://www.thomthom.net/blog/2007/09/php-resumable-download-server/
  * Original script autor: Thomas Thomassen
  *
+ * @link http://filedownloader.projekty.mujserver.net
  *
  * @name        File Downloader
  * @author      Jan Kuchař
@@ -63,6 +65,10 @@ class FileDownloader extends Object
    *    + readfile() (compatibility mode)
    *    + internal readfile function - supports
    *      partial downloads and is faster than readFile()
+   *
+   * @author Jan Kuchař
+   *
+   * @link http://www.thomthom.net/blog/2007/09/php-resumable-download-server/
    *
    * @param string $location  Location of source file
    * @param string $filename      File name with witch will be file sent to browser. for example: "test.jpg"
@@ -131,7 +137,9 @@ class FileDownloader extends Object
       $res->setHeader('Accept-Ranges', "none");
       if($req->getHeader("Range"))
         self::_HTTPError(416);
-      readfile($location);
+      if(!@readfile($location)){
+        throw new InvalidStateException("External readfile() function fails!");
+      }
     }
     if($terminate === TRUE)
       die();
@@ -139,7 +147,9 @@ class FileDownloader extends Object
 
   /**
    * Returns mimetype of the file
-   * @param string $location  Location to file
+   *
+   * @author Thomas Thomassen
+   * @param string $location  Everithing what accepts pathinfo()
    * @return string           Mime type
    */
   public static function getMimeType($location){
@@ -177,6 +187,12 @@ class FileDownloader extends Object
    * time limit gone before file download ends file may
    * be corrupted!
    *
+   * Sources:
+   *    @link http://cz2.php.net/manual/en/function.fpassthru.php#47110
+   *    @link http://cz2.php.net/manual/en/function.readfile.php#86244
+   *    @link http://cz2.php.net/manual/en/function.readfile.php#83653
+   *
+   * @author Jan Kuchař
    * @param string $location      File location
    * @param int $start            Start byte
    * @param int $end              End byte
@@ -208,15 +224,19 @@ class FileDownloader extends Object
 
   /**
    * Generates ETag and returns
+   *
+   * @author Jan Kuchař
    * @param string $location    Location to source file
    * @return string             ETag
    */
-  private static function getETag($location){
+  public static function getETag($location){
     return "\"".md5($location.filemtime($location).filesize($location))."\"";
   }
 
   /**
    * Config environment for downloading files
+   *
+   * @author Jan Kuchař
    * @return bool
    */
   private static function _configEnvironment(){
@@ -237,12 +257,17 @@ class FileDownloader extends Object
 
   /**
    * Returns filename (but if IE fix the bug)
+   *
+   * @link http://cz2.php.net/manual/en/function.fpassthru.php#25801
+   * @author Unknown
    * @param string $basename Path to file or filename
    * @return string
    */
   private static function _getContentDispositionHeaderData($basename){
     $basename = basename($basename);
-    if (isset($_SERVER['HTTP_USER_AGENT']) && strstr($_SERVER['HTTP_USER_AGENT'], "MSIE"))
+    $req = Environment::getHttpRequest();
+    $userAgent = $req->getHeader("User-Agent",false);
+    if ($userAgent AND strstr($userAgent, "MSIE"))
     {
       // workaround for IE filename bug with multiple periods / multiple dots in filename
       // that adds square brackets to filename - eg. setup.abc.exe becomes setup[1].abc.exe
@@ -253,7 +278,12 @@ class FileDownloader extends Object
 
   /**
    * Sends file to browser (faster method).
-   * This will generate headers and send file to browser.
+   * This will generate SOME headers and send file to browser.
+   *
+   * @link http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.16
+   * @link http://www.w3.org/Protocols/rfc2616/rfc2616-sec19.html#sec19.2
+   *
+   * @author Jan Kuchař
    * @param string $fileLocation  Path to file
    * @param bool $speedLimit      Apply step as bytes per second?
    * @param int $step             Bytes sent in one cycle
@@ -307,6 +337,8 @@ class FileDownloader extends Object
 
   /**
    * Sends http error to client
+   *
+   * @author Jan Kuchař
    * @param int $code       HTTP code
    * @param string $message HTTP status
    */
@@ -324,6 +356,8 @@ class FileDownloader extends Object
 
   /**
    * This will parse Range header and set results to the referential variables
+   *
+   * @author Thomas Thomassen
    * @param IHttpRequest $req Request object
    * @param IHttpResponse $res Response object
    * @param string $header Range header
@@ -385,5 +419,6 @@ class FileDownloader extends Object
 
 /**
  * Exception class
+ * @version $Id$
  */
 class FileDownloaderException extends Exception{}
