@@ -45,12 +45,63 @@ Debug::enableProfiler();
 
 // This i needed to cache works ok
 define("APP_DIR",dirname(__FILE__));
-define("TMP_DIR",APP_DIR."/tmp");
 
 // Chceme to česky :)
 Environment::getHttpResponse()->setContentType("text/html", "UTF-8");
 
-if(!IsSet($_GET["action"])){
+// Generate form
+$f = new Form;
+$f->setMethod("GET");
+$f->addHidden("action")->setValue("download");
+
+$f->addText("speed", "Downloading speed in kb/s (0=unlimited)", "4", 4);
+$f["speed"]->addRule(Form::FILLED,"Download speed must be filled!")
+  ->addRule(Form::INTEGER,"Download speed must be intiger!")
+  ->addRule(Form::RANGE,"Download speed must be in range from %d to %d kb/s",array(0,2000));
+
+$f->addText("filename", "As what file name you want do download the file?")
+  ->addRule(Form::FILLED, "You must fill file name!");
+
+$f->addText("size", "Size of file for download", 2, 2)
+  ->addRule(Form::INTEGER, "Size must be intinger")
+  ->addRule(Form::RANGE,"Size is not in range from %d to %d.",array(1,64))
+  ->addRule(Form::FILLED,"Size must be filled");
+
+$f->addSubmit("download", "Download!");
+
+$f->setDefaults(array(
+  "speed"=>10,
+  "filename"=>"test_file.tmp",
+  "size"=>"8",
+));
+
+function generateFile($location,$size){
+  $fp = fopen($location,"wb");
+    $toWrite = "";
+    for($y=0;$y<1024;$y++){ // One kb of content
+      $toWrite .= chr(rand(0,255));
+    }
+    for($i=0;$i<$size;$i++){
+      FWrite($fp,$toWrite);
+    }
+  fclose($fp);
+}
+
+if($f->isValid() AND $f->isSubmitted())
+{
+
+  if(!isSet($_GET["speed"])) $_GET["speed"] = 0;
+  if(!isSet($_GET["filename"])) $_GET["filename"] = "some_file.tmp";
+  if(!isSet($_GET["size"])) $_GET["size"] = 8;
+  FileDownloader::$maxDownloadSpeed = (int)$_GET["speed"];
+
+  if(!file_exists("temp/test-".(int)$_GET["size"]."MB.tmp")){
+    generateFile("temp/test-".(int)$_GET["size"]."MB.tmp", 1024*(int)$_GET["size"]); // 8MB file
+  }
+
+  FileDownloader::download(dirname(__FILE__)."/temp/test-".(int)$_GET["size"]."MB.tmp",(string)$_GET["filename"]);
+}
+
   ?>
   <html>
     <head>
@@ -89,59 +140,8 @@ if(!IsSet($_GET["action"])){
       <h2>File Downloader example form</h2>
       <p>Here you can test settings of File Downloader.</p>
       <?
-        // Generate form
-        $f = new Form;
-        $f->setMethod("GET");
-        $f->addHidden("action")->setValue("download");
-
-        $f->addText("speed", "Downloading speed in kb/s (0=unlimited)", "4", 4);
-        $f["speed"]->addRule(Form::FILLED,"Download speed must be filled!")
-          ->addRule(Form::INTEGER,"Download speed must be intiger!")
-          ->addRule(Form::RANGE,"Download speed must be in range from %d to %d kb/s",array(0,2000));
-
-        $f->addText("filename", "As what file name you want do download the file?")
-          ->addRule(Form::FILLED, "You must fill file name!");
-
-        $f->addText("size", "Size of file for download", 2, 2)
-          ->addRule(Form::INTEGER, "Size must be intinger")
-          ->addRule(Form::RANGE,"Size is not in range from %d to %d.",array(1,64))
-          ->addRule(Form::FILLED,"Size must be filled");
-
-        $f->addSubmit("download", "Download!");
-        
-        $f->setDefaults(array(
-          "speed"=>10,
-          "filename"=>"test_file.tmp",
-          "size"=>"8",
-        ));
         echo $f;
       ?>
     </div>
   </body>
   </html>
-    <?
-
-}elseif($_GET["action"]=="download"){
-  function generateFile($location,$size){
-    $fp = fopen($location,"wb");
-      $toWrite = "";
-      for($y=0;$y<1024;$y++){ // One kb of content
-        $toWrite .= chr(rand(0,255));
-      }
-      for($i=0;$i<$size;$i++){
-        FWrite($fp,$toWrite);
-      }
-    fclose($fp);
-  }
-
-  if(!isSet($_GET["speed"])) $_GET["speed"] = 0;
-  if(!isSet($_GET["filename"])) $_GET["filename"] = "some_file.tmp";
-  if(!isSet($_GET["size"])) $_GET["size"] = 8;
-  FileDownloader::$maxDownloadSpeed = (int)$_GET["speed"];
-
-  if(!file_exists("temp/test-".(int)$_GET["size"]."MB.tmp")){
-    generateFile("temp/test-".(int)$_GET["size"]."MB.tmp", 1024*(int)$_GET["size"]); // 8MB file
-  }
-
-  FileDownloader::download(dirname(__FILE__)."/temp/test-".(int)$_GET["size"]."MB.tmp",(string)$_GET["filename"]);
-}else throw new BadRequestException("Page not found",404);
