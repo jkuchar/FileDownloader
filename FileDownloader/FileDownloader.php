@@ -80,7 +80,7 @@ class FileDownloader extends Object
 	}
 
   /**
-   * Show "download dialog" in browser for required file
+   * Shows "download dialog" in browser for required file
    *  + Supports partial downloads
    *  + Supports speed limits
    *  + Supports auto mimetype detection (from config ini or from fileinfo php extension)
@@ -205,7 +205,7 @@ class FileDownloader extends Object
   }
 
   /**
-   * Send file to browser. (enhanced readfile())
+   * Sends file to browser. (enhanced readfile())
    * This function do not send any headers!
    *
    * It is strongly recomended to set_time_limit(0). If
@@ -259,7 +259,7 @@ class FileDownloader extends Object
   }
 
   /**
-   * Config environment for downloading files
+   * Configs environment for downloading files
    *
    * @author Jan Kuchař
    * @return bool
@@ -380,7 +380,7 @@ class FileDownloader extends Object
   }
 
   /**
-   * This will parse Range header and set results to the referential variables
+   * Parse Range header and set results to the referential variables
    *
    * @author Thomas Thomassen
    * @param IHttpRequest $req Request object
