@@ -195,6 +195,7 @@ class AdvancedDownloader extends BaseDownloader
                 $buffer = $this->end - $this->position + 1;
             }
             echo fread($fp, $buffer);
+            $this->position = ftell($fp);
             flush(); // PHP: Do not buffer it - send it to browser!
             if(connection_status()!=CONNECTION_NORMAL) {
                 fclose($fp);
@@ -205,7 +206,7 @@ class AdvancedDownloader extends BaseDownloader
                 die();
             }
             if($sleep==true OR $tmpTime<=time()){
-                $transfer->transferredBytes = $this->transferred = ($this->position+$buffer)-$this->start;
+                $transfer->transferredBytes = $this->transferred = $this->position-$this->start;
                 $transfer->onStatusChange($transfer,$this);
                 if(IsSet($tmpTime))
                     $tmpTime = time()+1;
@@ -214,6 +215,8 @@ class AdvancedDownloader extends BaseDownloader
                 sleep(1);
         }
         fclose($fp);
+        
+        $transfer->transferredBytes = $this->transferred = $this->length;
     }
 
 

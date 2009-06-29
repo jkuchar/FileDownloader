@@ -29,7 +29,7 @@ function log_write($data,FileDownload $file,IDownloader $downloader){
 
     $data = $data.": ".TemplateHelpers::bytes($file->transferredBytes)." <->; ";
     if($downloader instanceof AdvancedDownloader){
-        $data .= "position: ".$downloader->position."b; ";
+        $data .= "position: ".TemplateHelpers::bytes($downloader->position)."b; ";
         //$data .= "length: ".TemplateHelpers::bytes($downloader->length)."; ";
         $data .= "http-range: ".TemplateHelpers::bytes($downloader->start)."-".TemplateHelpers::bytes($downloader->end)."; ";
         $data .= "progress (con: ".round($file->transferredBytes/$downloader->end*100)."% X ";
