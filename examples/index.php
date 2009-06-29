@@ -37,111 +37,108 @@
  * @version    $Id$
  */
 
-require "nette/loader.php";
-require "../FileDownloader/FileDownloader.php";
+require_once "nette/loader.php";
+require_once "example_library.php";
+
+date_default_timezone_set("Europe/Prague");
+
+$loader = new RobotLoader();
+$loader->addDirectory(dirname(__FILE__)."/..");
+$loader->register();
 
 Debug::enable();
-Debug::enableProfiler();
 
 // This i needed to cache works ok
 define("APP_DIR",dirname(__FILE__));
 
-// Chceme to česky :)
+FileDownload::$defaults["speedLimit"] = 10*FDTools::KILOBYTE;
+
 Environment::getHttpResponse()->setContentType("text/html", "UTF-8");
+
+if(IsSet($_GET["logConsole"])){
+    Environment::getHttpResponse()->setHeader("refresh", "1");
+    $cache = Environment::getCache("FileDownloader/log");
+    echo "<html><body>";
+    echo "<h1>Log console (called events)</h1>";
+    echo "<p>Clear log = delete temp files</p>";
+    echo "<style>p{font-size: 11px;font-family: monospace;}</style>";
+    $reg = $cache["registry"];
+    krsort($reg);
+    $y=0;
+    foreach($reg AS $tid => $none){
+        $y++;
+        $tid=(string)$tid;
+        $log = $cache[$tid];
+        krsort($log);
+        $i=0;
+        foreach($log AS $key => $val){
+            if($i==0){
+                echo "<h2>Con. #".$tid;
+                if(strstr($val,"Abort"))
+                    echo " <span style=\"color: orange;\">(Aborted)</span>";
+                elseif(strstr($val,"Lost"))
+                    echo " <span style=\"color: red;\">(Connection losted)</span>";
+                elseif(strstr($val,"Complete"))
+                    echo " <span style=\"color: green;\">(Completed)</span>";
+                else
+                    echo " (Running)";
+                echo "</h2>";
+                echo "<p>";
+            }
+            $i++;
+            echo $key.": ".$val."<br>";
+            if($i>=10) break;
+        }
+        echo "</p>";
+        if($y>=7) break;
+    }
+    echo "</body></html>";
+    exit;
+}
 
 // Generate form
 $f = new Form;
 $f->setMethod("GET");
-$f->addHidden("action")->setValue("download");
+$f->addSelect("speed", "Speed",array(1=>"1byte/s",50=>"50bytes/s",512=>"512bytes/s",1*FDTools::KILOBYTE=>"1kb/s",5*FDTools::KILOBYTE=>"5kb/s",20*FDTools::KILOBYTE=>"20kb/s",0=>"Unlimited"));
 
-$f->addText("speed", "Downloading speed in kb/s (0=unlimited)", "4", 4);
-$f["speed"]->addRule(Form::FILLED,"Download speed must be filled!")
-  ->addRule(Form::INTEGER,"Download speed must be intiger!")
-  ->addRule(Form::RANGE,"Download speed must be in range from %d to %d kb/s",array(0,2000));
+$f->addText("filename", "Filename")
+  ->addRule(Form::FILLED, "You must fill name!");
 
-$f->addText("filename", "As what file name you want do download the file?")
-  ->addRule(Form::FILLED, "You must fill file name!");
+$f->addSelect("size", "Size", array(1=>"1MB",4=>"4MB",8=>"8MB"));
+//$f->addSelect("mimeType", "Mime type", array("text/plain"=>"text/plain",null=>"autodetect"));
 
-$f->addText("size", "Size of file for download", 2, 2)
-  ->addRule(Form::INTEGER, "Size must be intinger")
-  ->addRule(Form::RANGE,"Size is not in range from %d to %d.",array(1,64))
-  ->addRule(Form::FILLED,"Size must be filled");
-
-$f->addSubmit("download", "Download!");
+$f->addSubmit("download", "Download!")->getControlPrototype()->onClick = "window.open('?logConsole',null,'width=1000,height=400,menubar=yes,resizable=yes,scrollbars=yes');";
 
 $f->setDefaults(array(
-  "speed"=>10,
-  "filename"=>"test_file.tmp",
-  "size"=>"8",
+  "speed"=>50,
+  "filename"=>"tmp[{ěščřžýáíéůú}].tmp",
+  "size"=>8,
 ));
 
-function generateFile($location,$size){
-  $fp = fopen($location,"wb");
-    $toWrite = "";
-    for($y=0;$y<1024;$y++){ // One kb of content
-      $toWrite .= chr(rand(0,255));
-    }
-    for($i=0;$i<$size;$i++){
-      FWrite($fp,$toWrite);
-    }
-  fclose($fp);
+$file = new FileDownload;
+if($f->isSubmitted() and $f->isValid()){
+    $val = $f->getValues();
+    $location = dirname(__FILE__)."/temp/test-".$val["size"]."MB.tmp";
+    if(!file_exists($location)) generateFile($location, $val["size"]*1024);
+    $file->sourceFile = $location;
+    $file->transferFileName = $val["filename"];
+    $file->speedLimit = (int)$val["speed"];
+    //$file->mimeType = $val["mimeType"];
+
+    /* Functions defines in example_library.php */
+    $file->onBeforeDownloaderStarts[]   = "onBeforeDownloaderStarts";
+    $file->onBeforeOutputStarts[]       = "onBeforeOutputStarts";
+    $file->onStatusChange[]             = "onStatusChange";
+    $file->onComplete[]                 = "onComplete";
+    $file->onConnectionLost[]           = "onConnectionLost";
+    $file->onAbort[]                    = "onAbort";
+    $file->onTransferContinue[]         = "onTransferContinue";
+    $file->onNewTransferStart[]         = "onNewTransferStart";
+    $file->download();
+}
+$adownloader = new AdvancedDownloader;
+if(!$adownloader->isCompatible($file)) {
+    echo "<div style=\"background-color: red;color: white;font-weight: bold;\">Your system is not compatible with AdvancedDownloader (time limit is not zero) -> now running in compatibility mode! All fetures will NOT be available.</div>";
 }
 
-if($f->isValid() AND $f->isSubmitted())
-{
-
-  if(!isSet($_GET["speed"])) $_GET["speed"] = 0;
-  if(!isSet($_GET["filename"])) $_GET["filename"] = "some_file.tmp";
-  if(!isSet($_GET["size"])) $_GET["size"] = 8;
-  FileDownloader::$maxDownloadSpeed = (int)$_GET["speed"];
-
-  if(!file_exists("temp/test-".(int)$_GET["size"]."MB.tmp")){
-    generateFile("temp/test-".(int)$_GET["size"]."MB.tmp", 1024*(int)$_GET["size"]); // 8MB file
-  }
-
-  FileDownloader::download(dirname(__FILE__)."/temp/test-".(int)$_GET["size"]."MB.tmp",(string)$_GET["filename"]);
-}
-
-  ?>
-  <html>
-    <head>
-      <title>File Downloader example</title>
-      <style type="text/css">
-        table tr th{
-          text-align: right;
-        }
-
-        body,html{
-          margin:  0px;
-          padding: 0px;
-          text-align: center;
-        }
-
-        h1{
-          margin-top: 0px;
-          padding-bottom: 15px;
-          border-bottom: 1px solid black;
-          text-align: center;
-        }
-
-        body .kontejner{
-          padding: 20px;
-          margin: 0px auto;
-          width: 500px;
-          text-align: left;
-        }
-      </style>
-    </head>
-  <body>
-    <div class="kontejner">
-      <h1>File Downloader example</h1>
-      <p style="font-weight:bold;padding: 10px;background-color: #ffeac9;border: 2px solid #ffb541;-moz-border-radius: 8px;">When you downloading first time file of the some size, it can take some time before download dialog will appears. Server generating file with the required size.</p>
-
-      <h2>File Downloader example form</h2>
-      <p>Here you can test settings of File Downloader.</p>
-      <?
-        echo $f;
-      ?>
-    </div>
-  </body>
-  </html>
+echo $f;
