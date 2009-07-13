@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright (c) 2009, Jan Kuchař
+ * Copyright (c) 2009, Jan Kucha�
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms,
@@ -30,8 +30,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @author     Jan Kuchař
- * @copyright  Copyright (c) 2009 Jan Kuchař (http://mujserver.net)
+ * @author     Jan Kucha�
+ * @copyright  Copyright (c) 2009 Jan Kucha� (http://mujserver.net)
  * @license    New BSD License
  * @link       http://filedownloader.projekty.mujserver.net
  * @version    $Id$
@@ -88,14 +88,18 @@ $f->addSelect("size", "Size", array(
         512=>"512MB",
     ));
 
-$f->addSubmit("download", "Download!")
-    ->getControlPrototype()
-    ->onClick = "window.open('?logConsole',null,'width=1000,height=400,menubar=yes,resizable=yes,scrollbars=yes');";
+$f->addSelect("log", "Log called events?",array(
+        0=>"No",
+        1=>"Yes (may cause CPU load)",
+    ));
+
+$f->addSubmit("download", "Download!");
 
 $f->setDefaults(array(
         "speed"=>50,
         "filename"=>"Some horrible file name - ěščřžýáíé.bin",
         "size"=>8,
+        "log"=>1,
     ));
 
 if($f->isSubmitted() and $f->isValid()){
@@ -112,31 +116,19 @@ if($f->isSubmitted() and $f->isValid()){
     //$file->mimeType = $val["mimeType"];
 
     /* Functions defined in example_library.php */
-    $file->onBeforeDownloaderStarts[]   = "onBeforeDownloaderStarts";
-    $file->onBeforeOutputStarts[]       = "onBeforeOutputStarts";
-    $file->onStatusChange[]             = "onStatusChange";
-    $file->onComplete[]                 = "onComplete";
-    $file->onConnectionLost[]           = "onConnectionLost";
-    $file->onAbort[]                    = "onAbort";
-    $file->onTransferContinue[]         = "onTransferContinue";
-    $file->onNewTransferStart[]         = "onNewTransferStart";
+    if($val["log"]==1){
+        $file->onBeforeDownloaderStarts[]   = "onBeforeDownloaderStarts";
+        $file->onBeforeOutputStarts[]       = "onBeforeOutputStarts";
+        $file->onStatusChange[]             = "onStatusChange";
+        $file->onComplete[]                 = "onComplete";
+        $file->onConnectionLost[]           = "onConnectionLost";
+        $file->onAbort[]                    = "onAbort";
+        $file->onTransferContinue[]         = "onTransferContinue";
+        $file->onNewTransferStart[]         = "onNewTransferStart";
+    }
     $file->download();
 
-    /* Fluent interface */
-    FileDownload::getInstance()
-        ->setSourceFile($location)
-        ->setSpeedLimit((int)$val["speed"])
-        ->setTransferFileName($val["filename"])
-        //->setMimeType($val["mimeType"])
-        ->addBeforeDownloaderStartsCallback("onBeforeDownloaderStarts")
-        ->addBeforeOutputStartsCallback("onBeforeOutputStarts")
-        ->addStatusChangeCallback("onStatusChange")
-        ->addCompleteCallback("onComplete")
-        ->addConnectionLostCallback("onConnectionLost")
-        ->addAbortCallback("onAbort")
-        ->addTransferContinueCallback("onTransferContinue")
-        ->addNewTransferStartCallback("onNewTransferStart")
-        ->download();
+    /* Fluent interface is as separate example */
 
 }
 
@@ -191,5 +183,6 @@ if($f->isSubmitted() and $f->isValid()){
             refreshLink();
             $("form *").click(refreshLink).keypress(refreshLink).change(refreshLink);
         </script>
+        <a href="?logConsole" target="_BLANK" onclick="return !window.open(this.href,null,'width=1000,height=400,menubar=yes,resizable=yes,scrollbars=yes');">Open log console</a>
     </body>
 </html>
