@@ -1,6 +1,5 @@
 <?php
 
-
 /**
  * Copyright (c) 2009, Jan Kuchař
  * All rights reserved.
@@ -35,40 +34,31 @@
  * @copyright  Copyright (c) 2009 Jan Kuchař (http://mujserver.net)
  * @license    New BSD License
  * @link       http://filedownloader.projekty.mujserver.net
+ * @version    $Id$
  */
 
-/**
- *
- * @link http://filedownloader.projekty.mujserver.net
- *
- * @author      Jan Kuchař
- * @copyright   Copyright (c) 2009 Jan Kuchař
- * @author      Jan Kuchař
- * @version     $Id$
- */
-class NativePHPDownloader extends BaseDownloader
-{
-    /**
-     * Download file!
-     * @param FileDownload $file
-     */
-    function download(FileDownload $file){
-        $this->sendStandardFileHeaders($file,$this);
-        $file->onBeforeOutputStarts($file,$this);
-        if(!@readfile($file->sourceFile)){
-            throw new InvalidStateException("External readfile() function fails!");
-        }
-    }
 
-    /**
-     * Is this downloader compatible?
-     * @param FileDownload $file
-     * @return bool TRUE if is compatible; FALSE if not
-     */
-    function isCompatible(FileDownload $file){
-        $req = Environment::getHttpRequest();
-        if($req->getHeader("Range"))
-            return false;
-        return true;
-    }
-}
+define("APP_DIR",dirname(__FILE__));
+
+require_once "../load.php";
+
+/* Interface with getters and setters */
+$file = new FileDownload;
+$file->sourceFile = "source.txt";
+$file->speedLimit = 5*FDTools::BYTE;
+
+//$file->transferFileName = "test.txt";
+//$file->mimeType = "plain/text";
+
+// Callbacks
+//$file->onBeforeDownloaderStarts[]   = "onBeforeDownloaderStarts";
+//$file->onBeforeOutputStarts[]       = "onBeforeOutputStarts";
+//$file->onStatusChange[]             = "onStatusChange";
+//$file->onComplete[]                 = "onComplete";
+//$file->onConnectionLost[]           = "onConnectionLost";
+//$file->onAbort[]                    = "onAbort";
+//$file->onTransferContinue[]         = "onTransferContinue";
+//$file->onNewTransferStart[]         = "onNewTransferStart";
+
+// Start download
+$file->download();

@@ -404,14 +404,13 @@ class FileDownload extends Object
 
         $mime = "";
         if (extension_loaded('fileinfo') and function_exists("finfo_open")) {
-          // !!! NOT TESTED !!! CAN SOMEONE TEST IT??? !!!
-          if ($finfo = @finfo_open(FILEINFO_MIME))
-          {
-            $mime = @finfo_file($finfo, $this->transferFileName);
-            @finfo_close($finfo);
-            if(FDTools::isValidMimeType($mime))
-                return $mime;
-          }
+        //TODO: test this code:
+            if ($finfo = @finfo_open(FILEINFO_MIME)) {
+                $mime = @finfo_file($finfo, $this->transferFileName);
+                @finfo_close($finfo);
+                if(FDTools::isValidMimeType($mime))
+                    return $mime;
+            }
         }
 
         if(function_exists("mime_content_type")) {
@@ -425,12 +424,12 @@ class FileDownload extends Object
         // By file extension from ini file
         $cache = Environment::getCache("FileDownloader");
         if(!IsSet($cache["mime-types"]))
-          $cache["mime-types"] = parse_ini_file(dirname(__FILE__)."\\mime.ini");
+            $cache["mime-types"] = parse_ini_file(dirname(__FILE__)."\\mime.ini");
         $mimetypes = $cache["mime-types"];
 
         $extension = pathinfo($this->transferFileName, PATHINFO_EXTENSION);
         if (array_key_exists($extension, $mimetypes))
-          $mime = $mimetypes[$extension];
+            $mime = $mimetypes[$extension];
 
         if(FDTools::isValidMimeType($mime))
             return $mime;
@@ -473,7 +472,7 @@ class FileDownload extends Object
         if(count($downloaders)<=0)
             throw new InvalidStateException("There is no registred downloader!");
 
-        krsort(&$downloaders);
+        krsort($downloaders);
 
         $lastException = null;
 
@@ -520,9 +519,9 @@ FileDownload::registerFileDownloader(new AdvancedDownloader);
 /**
  * When some http error
  */
-class FileDownloaderException extends Exception{}
+class FileDownloaderException extends Exception {}
 
 /**
  * When downloader throws this exception -> it will be skipped
  */
-class FDSkypeMeException extends Exception{}
+class FDSkypeMeException extends Exception {}

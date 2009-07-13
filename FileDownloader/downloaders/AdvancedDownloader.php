@@ -67,7 +67,7 @@ class AdvancedDownloader extends BaseDownloader
     function download(FileDownload $transfer){
         $this->sendStandardFileHeaders($transfer,$this);
 
-        @ignore_user_abort(true);
+        @ignore_user_abort(true); // For onAbort event
         
         $req = Environment::getHttpRequest();
         $res = Environment::getHttpResponse();
@@ -92,9 +92,8 @@ class AdvancedDownloader extends BaseDownloader
          * as well as a boundry header to indicate the various chunks of data.
          */
 
-        $res->setHeader("Accept-Ranges", "0-".$this->end);
-        // header('Accept-Ranges: bytes'); // For multipart messages
-        // multipart/byteranges
+        //$res->setHeader("Accept-Ranges", "0-".$this->end); // single-part - now not accepted by mozilla
+        $res->setHeader("Accept-Ranges", "bytes"); // multi-part (through Mozilla)
         // http://www.w3.org/Protocols/rfc2616/rfc2616-sec19.html#sec19.2
 
         if ($req->getHeader("Range", false)) // If partial download
@@ -219,6 +218,16 @@ class AdvancedDownloader extends BaseDownloader
         $transfer->transferredBytes = $this->transferred = $this->length;
     }
 
+    /**
+     * Is this downloader initialized?
+     * @return bool
+     */
+    function isInitialized(){
+        if($this->end == 0)
+            return false;
+        return true;
+    }
+
 
     /**
      * Is this downloader compatible?
@@ -234,5 +243,3 @@ class AdvancedDownloader extends BaseDownloader
         return true;
     }
 }
-
-

@@ -72,9 +72,9 @@ class FDTools extends Object{
      */
     static function parsePHPIniMemoryValue($phpIniValue){
         if((int)$phpIniValue == 0) return 0;
-        $jednotka = "";
-        if(eregi("[0-9]{0,3}([A-Z])",$phpIniValue,&$out))
-          $jednotka = $out[1];
+        $jednotka = substr($phpIniValue, -1, 1);
+        if(!preg_match("/^[KMGT]$/",$jednotka))
+            throw new InvalidStateException("Can't parse value!");
         $phpIniValue = (int)$phpIniValue;
         switch ($jednotka) {
           case "K":
