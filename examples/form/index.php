@@ -161,6 +161,7 @@ if($f->isSubmitted() and $f->isValid()){
         <script src="http://jqueryjs.googlecode.com/files/jquery-1.3.2.min.js" type="text/JavaScript"></script>
     </head>
     <body>
+        <h1>File Downloader example</h1>
         <?php
             /* Compatibility check -> makes warning */
             $adownloader = new AdvancedDownloader;
@@ -182,7 +183,14 @@ if($f->isSubmitted() and $f->isValid()){
             $("body").append("<a href=\"javascript:;\" id=\"link\">Start download!</a>");
             refreshLink();
             $("form *").click(refreshLink).keypress(refreshLink).change(refreshLink);
+            function refreshLog(){
+                $("#logConsole").load("?logConsole");
+            }
+            $(function(){
+                refreshLog();
+                setInterval(refreshLog, 1000);
+            });
         </script>
-        <a href="?logConsole" target="_BLANK" onclick="return !window.open(this.href,null,'width=1000,height=400,menubar=yes,resizable=yes,scrollbars=yes');">Open log console</a>
+        <div id="logConsole">For using log console you must enable JavaScript!</div>
     </body>
 </html>

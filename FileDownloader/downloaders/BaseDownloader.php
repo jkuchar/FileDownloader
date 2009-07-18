@@ -55,7 +55,7 @@ abstract class BaseDownloader extends Object implements IDownloader {
     protected function sendStandardFileHeaders(FileDownload $file,BaseDownloader $downloader=null){
         $res = Environment::getHttpResponse();
         $req = Environment::getHttpRequest();
-        FDTools::clearHeaders($res);
+        //FDTools::clearHeaders($res); // Voláno už v FileDownload.php
 
         $res->setContentType($file->mimeType,"UTF-8");
         $res->setHeader("X-File-Downloader", "File Downloader (http://filedownloader.projekty.mujserver.net)");

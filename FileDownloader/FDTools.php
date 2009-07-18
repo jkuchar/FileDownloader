@@ -67,32 +67,29 @@ class FDTools extends Object{
 
     /**
      * Parse php ini file memory values (5G,10M,3K)
-     * @param string $phpIniValue
+     * @param string $phpIniValueStr
      * @return int
      */
-    static function parsePHPIniMemoryValue($phpIniValue){
-        if((int)$phpIniValue == 0) return 0;
-        $jednotka = substr($phpIniValue, -1, 1);
-        if(!preg_match("/^[KMGT]$/",$jednotka))
-            throw new InvalidStateException("Can't parse value!");
-        $phpIniValue = (int)$phpIniValue;
-        switch ($jednotka) {
+    static function parsePHPIniMemoryValue($phpIniValueStr){
+        $phpIniValueInt = (int)$phpIniValueStr;
+        if($phpIniValueInt == 0) return 0;
+        switch (substr($phpIniValueStr, -1, 1)) {
           case "K":
-              $phpIniValue = $phpIniValue*self::KILOBYTE;
+              $phpIniValueInt *= self::KILOBYTE;
               break;
           case "M":
-              $phpIniValue = $phpIniValue*self::MEGABYTE;;
+              $phpIniValueInt *= self::MEGABYTE;;
               break;
           case "G":
-              $phpIniValue = $phpIniValue*self::GYGABYTE;
+              $phpIniValueInt *= self::GYGABYTE;
               break;
           case "T":
-              $phpIniValue = $phpIniValue*self::TERABYTE;
+              $phpIniValueInt *= self::TERABYTE;
               break;
           default:
               throw new InvalidStateException("Can't parse php ini value!");
         }
-        return (int)$phpIniValue;
+        return $phpIniValueInt;
     }
 
     /**
