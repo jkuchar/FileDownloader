@@ -62,6 +62,7 @@
  * @property string $mimeType           Mime-type of transferred file
  * @property int $speedLimit            Speed limit
  * @property int $transferredBytes      How many bytes was sent to browser
+ * @property int $contentDisposition    Content disposition: inline or attachment
  * @property-read int $sourceFileSize   File size
  * @property-read int $transferID       TransferId
  */
@@ -116,6 +117,15 @@ class FileDownload extends Object
      * @var string
      */
     private $vTransferID = -1;
+
+    const CONTENT_DISPOSITION_ATTACHMENT = "attachment";
+    const CONTENT_DISPOSITION_INLINE = "inline";
+
+    /**
+     * Content disposition: attachment / inline
+     * @var string
+     */
+    private $vContentDisposition = 'attachment';
 
     /**
      * Maximal speed of download (in kb/s)
@@ -349,6 +359,26 @@ class FileDownload extends Object
         return $this->vSourceFile;
     }
 
+    /**
+     * Setts content disposition
+     * @param string $disposition
+     * @return FileDownload
+     */
+    function setContentDisposition($disposition){
+        $values = array("inline","attachment");
+        if(!in_array($disposition,$values))
+            throw new InvalidArgumentException("Content disposition must be one of these: ".implode(",", $values));
+        $this->vContentDisposition = $disposition;
+        return $this;
+    }
+
+    /**
+     * Getts content disposition
+     * @return string
+     */
+    function getContentDisposition(){
+        return $this->vContentDisposition;
+    }
 
     /**
      * Getts send as name

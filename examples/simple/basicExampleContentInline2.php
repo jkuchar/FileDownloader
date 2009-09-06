@@ -34,41 +34,14 @@
  * @copyright  Copyright (c) 2009 Jan Kuchař (http://mujserver.net)
  * @license    New BSD License
  * @link       http://filedownloader.projekty.mujserver.net
+ * @version    $Id$
  */
 
-/**
- *
- * @link http://filedownloader.projekty.mujserver.net
- *
- * @author      Jan Kuchař
- * @copyright   Copyright (c) 2009 Jan Kuchař
- * @author      Jan Kuchař
- * @version     $Id$
- */
-abstract class BaseDownloader extends Object implements IDownloader {
 
-    /**
-     * Sends a standard headers for file download
-     * @param FileDownload $file            File
-     * @param BaseDownloader $downloader    Downloader of the file
-     */
-    protected function sendStandardFileHeaders(FileDownload $file,BaseDownloader $downloader=null){
-        $res = Environment::getHttpResponse();
-        $req = Environment::getHttpRequest();
-        //FDTools::clearHeaders($res); // Voláno už v FileDownload.php
+define("APP_DIR",dirname(__FILE__));
+require_once "../load.php"; // Loads nette
 
-        $res->setContentType($file->mimeType,"UTF-8");
-        $res->setHeader("X-File-Downloader", "File Downloader (http://filedownloader.projekty.mujserver.net)");
-        if($downloader !== null)
-            $res->setHeader("X-FileDownloader-Actual-Script", $downloader->getClass());
-        $res->setHeader('Expires', '0');
-        $res->setHeader('Cache-Control', 'must-revalidate, post-check=0, pre-check=0');
-        $res->setHeader('Pragma', 'public'); // Fix for IE - Content-Disposition
-        $res->setHeader('Content-Disposition', $file->getContentDisposition().'; filename="'.FDTools::getContentDispositionHeaderData($file->transferFileName).'"');
-        $res->setHeader('Content-Description', 'File Transfer');
-        $res->setHeader('Content-Transfer-Encoding', 'binary');
-        $res->setHeader('Connection', 'close');
-        $res->setHeader('ETag', FDTools::getETag($file->sourceFile));
-        $res->setHeader('Content-Length', filesize($file->sourceFile));
-    }
-}
+FileDownload::getInstance()
+    ->setSourceFile("source.txt")
+    ->setContentDisposition(FileDownload::CONTENT_DISPOSITION_INLINE)
+    ->download();
