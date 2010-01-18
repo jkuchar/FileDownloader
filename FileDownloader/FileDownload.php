@@ -81,6 +81,12 @@ class FileDownload extends Object
     private static $fileDownloaders=array();
 
     /**
+     * Close session before start download? (if not, it will block session until file is transferred!)
+     * @var bool
+     */
+    public static $closeSession = true;
+
+    /**
      * Add file downlaoder
      *   Order is priority (last added will be used first)
      * @param IDownloader $downloader
@@ -493,6 +499,13 @@ class FileDownload extends Object
     function download(IDownloader $downloader = null){
         $req = Environment::getHttpRequest();
         $res = Environment::getHttpResponse();
+	
+	if(self::$closeSession) {
+		$ses = Environment::getSession();
+		if($ses->isStarted()) {
+			$ses->close();
+		}
+	}
 
         if($downloader === null)
             $downloaders = self::getFileDownloaders();
