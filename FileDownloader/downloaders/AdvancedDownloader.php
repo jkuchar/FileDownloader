@@ -196,6 +196,7 @@ class AdvancedDownloader extends BaseDownloader
             echo fread($fp, $buffer);
             $this->position = ftell($fp);
             flush(); // PHP: Do not buffer it - send it to browser!
+	    @ob_flush();
             if(connection_status()!=CONNECTION_NORMAL) {
                 fclose($fp);
                 $transfer->onConnectionLost($transfer,$this);
