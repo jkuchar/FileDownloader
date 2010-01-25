@@ -66,7 +66,7 @@
  * @property-read int $sourceFileSize   File size
  * @property-read int $transferID       TransferId
  */
-class FileDownload extends Object
+class FileDownload extends Object implements IPresenterResponse
 {
     /**
      * Array with defaults (will web called <code>$file->$key = $val;</code>)
@@ -318,7 +318,8 @@ class FileDownload extends Object
      * @return FileDownload
      */
     private function addCallback($fceName,$callback){
-        $varName = "on".eregi_replace("^(.*)::add(.*)Callback$", "\\2", $fceName);
+	preg_match("/^.*::add(.*)Callback$/", $fceName, $matches);
+        $varName = "on".$matches[1];
         $var = &$this->$varName;
         $var[] = $callback;
         return $this;
@@ -351,7 +352,7 @@ class FileDownload extends Object
             if(!file_exists($location)) throw new BadRequestException("File not found at '".$location."'!");
             if(!is_readable($location)) throw new InvalidStateException("File is NOT readable!");
             $this->transferFileName = pathinfo($location, PATHINFO_BASENAME);
-            $this->vSourceFile = $location;
+            $this->vSourceFile = realpath($location);
         }
         return $this;
     }
@@ -442,7 +443,7 @@ class FileDownload extends Object
         if (extension_loaded('fileinfo') and function_exists("finfo_open")) {
         //TODO: test this code:
             if ($finfo = @finfo_open(FILEINFO_MIME)) {
-                $mime = @finfo_file($finfo, $this->transferFileName);
+                $mime = @finfo_file($finfo, $this->sourceFile);
                 @finfo_close($finfo);
                 if(FDTools::isValidMimeType($mime))
                     return $mime;
@@ -450,8 +451,8 @@ class FileDownload extends Object
         }
 
         if(function_exists("mime_content_type")) {
-            $mimeTmp = mime_content_type($this->transferFileName);
-            if(eregi('^[a-z\\-]*\\/[a-z\\-]*$',$mimeTmp))
+            $mimeTmp = mime_content_type($this->sourceFile);
+            if(preg_match('/^[a-z\\-]*\\/[a-z\\-]*$/i',$mimeTmp))
                 $mime = $mimeTmp;
             if(FDTools::isValidMimeType($mime))
                 return $mime;
@@ -491,6 +492,12 @@ class FileDownload extends Object
         return filesize($this->sourceFile);
     }
 
+    /**
+     * implementation od IPresenterResponse
+     */
+    function send() {
+	    $this->download();
+    }
 
     /**
      * Download the file!

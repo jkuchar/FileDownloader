@@ -186,7 +186,7 @@ class FDTools extends Object{
      */
     static function isValidMimeType($mime){
         $mime = (string)$mime;
-        if(eregi('^[a-z\\-]*\\/[a-z\\-]*$',$mime))
+        if(preg_match('/^[a-z\\-]*\\/[a-z\\-]*$/i',$mime))
             return true;
         else
             return false;
