@@ -56,7 +56,7 @@ class NativePHPDownloader extends BaseDownloader
         $this->sendStandardFileHeaders($file,$this);
         $file->onBeforeOutputStarts($file,$this);
         if(!@readfile($file->sourceFile)){
-            throw new InvalidStateException("External readfile() function fails!");
+            throw new InvalidStateException("PHP readfile() function fails!");
         }
     }
 
