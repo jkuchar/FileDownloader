@@ -66,7 +66,7 @@
  * @property-read int $sourceFileSize   File size
  * @property-read int $transferID       TransferId
  */
-class FileDownload extends Object implements IPresenterResponse {
+class FileDownload extends Object {
 	/**
 	 * Array with defaults (will web called <code>$file->$key = $val;</code>)
 	 * @var array
@@ -114,7 +114,7 @@ class FileDownload extends Object implements IPresenterResponse {
 	 * @return FileDownload
 	 */
 	public static function getInstance() {
-		return new FileDownload;
+		return new FileDownload();
 	}
 
 	/**
@@ -489,13 +489,6 @@ class FileDownload extends Object implements IPresenterResponse {
 	 */
 	public function getSourceFileSize() {
 		return filesize($this->sourceFile);
-	}
-
-	/**
-	 * implementation od IPresenterResponse
-	 */
-	function send() {
-		$this->download();
 	}
 
 	/**
