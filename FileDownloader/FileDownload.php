@@ -49,7 +49,7 @@
  *  + defaults
  *  + modular system
  *  +
- * 
+ *
  * @link http://filedownloader.projekty.mujserver.net
  *
  * @author      Jan Kuchař
@@ -66,500 +66,499 @@
  * @property-read int $sourceFileSize   File size
  * @property-read int $transferID       TransferId
  */
-class FileDownload extends Object implements IPresenterResponse
-{
-    /**
-     * Array with defaults (will web called <code>$file->$key = $val;</code>)
-     * @var array
-     */
-    public static $defaults = array();
+class FileDownload extends Object implements IPresenterResponse {
+	/**
+	 * Array with defaults (will web called <code>$file->$key = $val;</code>)
+	 * @var array
+	 */
+	public static $defaults = array();
 
-    /**
-     * Downloaders array
-     * @var array
-     */
-    private static $fileDownloaders=array();
+	/**
+	 * Downloaders array
+	 * @var array
+	 */
+	private static $fileDownloaders=array();
 
-    /**
-     * Close session before start download? (if not, it will block session until file is transferred!)
-     * @var bool
-     */
-    public static $closeSession = true;
+	/**
+	 * Close session before start download? (if not, it will block session until file is transferred!)
+	 * @var bool
+	 */
+	public static $closeSession = true;
 
-    /**
-     * Add file downlaoder
-     *   Order is priority (last added will be used first)
-     * @param IDownloader $downloader
-     */
-    public static function registerFileDownloader(IDownloader $downloader){
-        self::$fileDownloaders[] = $downloader;
-    }
+	/**
+	 * Add file downlaoder
+	 *   Order is priority (last added will be used first)
+	 * @param IDownloader $downloader
+	 */
+	public static function registerFileDownloader(IDownloader $downloader) {
+		self::$fileDownloaders[] = $downloader;
+	}
 
-    /**
-     * Getts all registred file downloaders
-     * @return array
-     */
-    public static function getFileDownloaders(){
-        return self::$fileDownloaders;
-    }
+	/**
+	 * Getts all registred file downloaders
+	 * @return array
+	 */
+	public static function getFileDownloaders() {
+		return self::$fileDownloaders;
+	}
 
-    /**
-     * Unregister all registred downloaders
-     */
-    public static function clearFileDownloaders(){
-        self::$fileDownloaders = array();
-    }
+	/**
+	 * Unregister all registred downloaders
+	 */
+	public static function clearFileDownloaders() {
+		self::$fileDownloaders = array();
+	}
 
-    /**
-     * Getts new instance of self
-     * @return FileDownload
-     */
-    public static function getInstance(){
-        return new FileDownload;
-    }
+	/**
+	 * Getts new instance of self
+	 * @return FileDownload
+	 */
+	public static function getInstance() {
+		return new FileDownload;
+	}
 
-    /**
-     * Transfer identificator
-     * @var string
-     */
-    private $vTransferID = -1;
+	/**
+	 * Transfer identificator
+	 * @var string
+	 */
+	private $vTransferID = -1;
 
-    const CONTENT_DISPOSITION_ATTACHMENT = "attachment";
-    const CONTENT_DISPOSITION_INLINE = "inline";
+	const CONTENT_DISPOSITION_ATTACHMENT = "attachment";
+	const CONTENT_DISPOSITION_INLINE = "inline";
 
-    /**
-     * Content disposition: attachment / inline
-     * @var string
-     */
-    private $vContentDisposition = 'attachment';
+	/**
+	 * Content disposition: attachment / inline
+	 * @var string
+	 */
+	private $vContentDisposition = 'attachment';
 
-    /**
-     * Maximal speed of download (in kb/s)
-     * 0 is unlimited
-     * @var int
-     */
-    private $vSpeedLimit = 0;
+	/**
+	 * Maximal speed of download (in kb/s)
+	 * 0 is unlimited
+	 * @var int
+	 */
+	private $vSpeedLimit = 0;
 
-    /**
-     * Location of the file
-     * @var string|null
-     */
-    private $vSourceFile = null;
+	/**
+	 * Location of the file
+	 * @var string|null
+	 */
+	private $vSourceFile = null;
 
-    /**
-     * Send as filename
-     * @var string|null
-     */
-    private $vTransferFileName = null;
+	/**
+	 * Send as filename
+	 * @var string|null
+	 */
+	private $vTransferFileName = null;
 
-    /**
-     * Mimetype of file
-     * null = autodetection
-     *
-     * @var string|null
-     */
-    private $vMimeType = null;
+	/**
+	 * Mimetype of file
+	 * null = autodetection
+	 *
+	 * @var string|null
+	 */
+	private $vMimeType = null;
 
-    /**
-     * How many bytes is sent
-     * @var int
-     */
-    public $transferredBytes = 0;
+	/**
+	 * How many bytes is sent
+	 * @var int
+	 */
+	public $transferredBytes = 0;
 
-    /**
-     * Callback - before downloader starts.
-     * First parameter will be this file
-     * Second parameter will be downloader object
-     * @var array
-     */
-    public $onBeforeDownloaderStarts = array();
+	/**
+	 * Callback - before downloader starts.
+	 * First parameter will be this file
+	 * Second parameter will be downloader object
+	 * @var array
+	 */
+	public $onBeforeDownloaderStarts = array();
 
-    /**
-     * Adds onBeforeDownloaderStarts callback
-     * @param callback $callback Callback
-     * @return FileDownload
-     */
-    function addBeforeDownloaderStartsCallback($callback){
-        return $this->addCallback(__METHOD__, $callback);
-    }
+	/**
+	 * Adds onBeforeDownloaderStarts callback
+	 * @param callback $callback Callback
+	 * @return FileDownload
+	 */
+	function addBeforeDownloaderStartsCallback($callback) {
+		return $this->addCallback(__METHOD__, $callback);
+	}
 
-    /**
-     * Callback - before is send first bit of file to browser
-     * First parameter will be this file
-     * Second parameter will be downloader object
-     *  NOTE: This callback must be supported by downloader!
-     * @var array
-     */
-    public $onBeforeOutputStarts = array();
+	/**
+	 * Callback - before is send first bit of file to browser
+	 * First parameter will be this file
+	 * Second parameter will be downloader object
+	 *  NOTE: This callback must be supported by downloader!
+	 * @var array
+	 */
+	public $onBeforeOutputStarts = array();
 
-    /**
-     * Adds onBeforeOutputStarts callback
-     * @param callback $callback Callback
-     * @return FileDownload
-     */
-    function addBeforeOutputStartsCallback($callback){
-        return $this->addCallback(__METHOD__, $callback);
-    }
+	/**
+	 * Adds onBeforeOutputStarts callback
+	 * @param callback $callback Callback
+	 * @return FileDownload
+	 */
+	function addBeforeOutputStartsCallback($callback) {
+		return $this->addCallback(__METHOD__, $callback);
+	}
 
-    /**
-     * Callback - when status changes
-     * First parameter will be this file
-     * Second parameter will be downloader object
-     *  NOTE: This callback must be supported by downloader!
-     * @var array
-     */
-    public $onStatusChange = array();
+	/**
+	 * Callback - when status changes
+	 * First parameter will be this file
+	 * Second parameter will be downloader object
+	 *  NOTE: This callback must be supported by downloader!
+	 * @var array
+	 */
+	public $onStatusChange = array();
 
-    /**
-     * Adds StatusChange callback
-     * @param callback $callback Callback
-     * @return FileDownload
-     */
-    function addStatusChangeCallback($callback){
-        return $this->addCallback(__METHOD__, $callback);
-    }
+	/**
+	 * Adds StatusChange callback
+	 * @param callback $callback Callback
+	 * @return FileDownload
+	 */
+	function addStatusChangeCallback($callback) {
+		return $this->addCallback(__METHOD__, $callback);
+	}
 
-    /**
-     * Callback - when file download completed
-     * First parameter will be this file
-     * Second parameter will be downloader object
-     * @var array
-     */
-    public $onComplete = array();
+	/**
+	 * Callback - when file download completed
+	 * First parameter will be this file
+	 * Second parameter will be downloader object
+	 * @var array
+	 */
+	public $onComplete = array();
 
-    /**
-     * Adds Complete callback
-     * @param callback $callback Callback
-     * @return FileDownload
-     */
-    function addCompleteCallback($callback){
-        return $this->addCallback(__METHOD__, $callback);
-    }
+	/**
+	 * Adds Complete callback
+	 * @param callback $callback Callback
+	 * @return FileDownload
+	 */
+	function addCompleteCallback($callback) {
+		return $this->addCallback(__METHOD__, $callback);
+	}
 
-    /**
-     * Callback - when file download has been corrupted/stopped and now
-     * again conected and wants only part of the file.
-     * Called after - onBeforeOutputStarts
-     * First parameter will be this file
-     * Second parameter will be downloader object
-     *  NOTE: This callback must be supported by downloader!
-     * @var array
-     */
-    public $onTransferContinue = array();
+	/**
+	 * Callback - when file download has been corrupted/stopped and now
+	 * again conected and wants only part of the file.
+	 * Called after - onBeforeOutputStarts
+	 * First parameter will be this file
+	 * Second parameter will be downloader object
+	 *  NOTE: This callback must be supported by downloader!
+	 * @var array
+	 */
+	public $onTransferContinue = array();
 
-    /**
-     * Adds TransferContinue callback
-     * @param callback $callback Callback
-     * @return FileDownload
-     */
-    function addTransferContinueCallback($callback){
-        return $this->addCallback(__METHOD__, $callback);
-    }
+	/**
+	 * Adds TransferContinue callback
+	 * @param callback $callback Callback
+	 * @return FileDownload
+	 */
+	function addTransferContinueCallback($callback) {
+		return $this->addCallback(__METHOD__, $callback);
+	}
 
-    /**
-     * Callback - when new file download starts (from the begining)
-     * Called after - onBeforeOutputStarts
-     * First parameter will be this file
-     * Second parameter will be downloader object
-     *  NOTE: This callback must be supported by downloader!
-     * @var array
-     */
-    public $onNewTransferStart = array();
+	/**
+	 * Callback - when new file download starts (from the begining)
+	 * Called after - onBeforeOutputStarts
+	 * First parameter will be this file
+	 * Second parameter will be downloader object
+	 *  NOTE: This callback must be supported by downloader!
+	 * @var array
+	 */
+	public $onNewTransferStart = array();
 
-    /**
-     * Adds NewTransferStart callback
-     * @param callback $callback Callback
-     * @return FileDownload
-     */
-    function addNewTransferStartCallback($callback){
-        return $this->addCallback(__METHOD__, $callback);
-    }
+	/**
+	 * Adds NewTransferStart callback
+	 * @param callback $callback Callback
+	 * @return FileDownload
+	 */
+	function addNewTransferStartCallback($callback) {
+		return $this->addCallback(__METHOD__, $callback);
+	}
 
-    /**
-     * Callback - when browser disconnects from server (abort)
-     * First parameter will be this file
-     * Second parameter will be downloader object
-     *  NOTE: This callback must be supported by downloader!
-     * @var array
-     */
-    public $onAbort = array();
+	/**
+	 * Callback - when browser disconnects from server (abort)
+	 * First parameter will be this file
+	 * Second parameter will be downloader object
+	 *  NOTE: This callback must be supported by downloader!
+	 * @var array
+	 */
+	public $onAbort = array();
 
-    /**
-     * Adds Abort callback
-     * @param callback $callback Callback
-     * @return FileDownload
-     */
-    function addAbortCallback($callback){
-        return $this->addCallback(__METHOD__, $callback);
-    }
+	/**
+	 * Adds Abort callback
+	 * @param callback $callback Callback
+	 * @return FileDownload
+	 */
+	function addAbortCallback($callback) {
+		return $this->addCallback(__METHOD__, $callback);
+	}
 
-    /**
-     * Callback - when browser disconnects from server (abort,timeout)
-     * First parameter will be this file
-     * Second parameter will be downloader object
-     *  NOTE: This callback must be supported by downloader!
-     * @var array
-     */
-    public $onConnectionLost = array();
+	/**
+	 * Callback - when browser disconnects from server (abort,timeout)
+	 * First parameter will be this file
+	 * Second parameter will be downloader object
+	 *  NOTE: This callback must be supported by downloader!
+	 * @var array
+	 */
+	public $onConnectionLost = array();
 
-    /**
-     * Adds ConnectionError callback
-     * @param callback $callback Callback
-     * @return FileDownload
-     */
-    function addConnectionLostCallback($callback){
-        return $this->addCallback(__METHOD__, $callback);
-    }
+	/**
+	 * Adds ConnectionError callback
+	 * @param callback $callback Callback
+	 * @return FileDownload
+	 */
+	function addConnectionLostCallback($callback) {
+		return $this->addCallback(__METHOD__, $callback);
+	}
 
-    /**
-     * Adds callback
-     * @param string $name          Name of callback
-     * @param callback $callback    Callback
-     * @return FileDownload
-     */
-    private function addCallback($fceName,$callback){
-	preg_match("/^.*::add(.*)Callback$/", $fceName, $matches);
-        $varName = "on".$matches[1];
-        $var = &$this->$varName;
-        $var[] = $callback;
-        return $this;
-    }
+	/**
+	 * Adds callback
+	 * @param string $name          Name of callback
+	 * @param callback $callback    Callback
+	 * @return FileDownload
+	 */
+	private function addCallback($fceName,$callback) {
+		preg_match("/^.*::add(.*)Callback$/", $fceName, $matches);
+		$varName = "on".$matches[1];
+		$var = &$this->$varName;
+		$var[] = $callback;
+		return $this;
+	}
 
-    function  __construct() {
-        $this->vTransferID = time()."-".rand();
-        foreach(self::$defaults AS $key => $val){
-            $this->$key = $val;
-        }
-    }
-
-    /**
-     * Getts transfer identificator
-     * @return string
-     */
-    public function getTransferId(){
-        return $this->vTransferID;
-    }
-
-    /**
-     * Setts location of source file
-     * @param string $location Location of the source file
-     * @return FileDownload
-     */
-    function setSourceFile($location){
-        if($location === null){
-            $this->vSourceFile = null;
-        }else{
-            if(!file_exists($location)) throw new BadRequestException("File not found at '".$location."'!");
-            if(!is_readable($location)) throw new InvalidStateException("File is NOT readable!");
-            $this->transferFileName = pathinfo($location, PATHINFO_BASENAME);
-            $this->vSourceFile = realpath($location);
-        }
-        return $this;
-    }
-
-    /**
-     * Getts location of the source file
-     * @return FileDownload
-     */
-    function getSourceFile(){
-        if($this->vSourceFile === null) throw new InvalidStateException("Location is not set!");
-        return $this->vSourceFile;
-    }
-
-    /**
-     * Setts content disposition
-     * @param string $disposition
-     * @return FileDownload
-     */
-    function setContentDisposition($disposition){
-        $values = array("inline","attachment");
-        if(!in_array($disposition,$values))
-            throw new InvalidArgumentException("Content disposition must be one of these: ".implode(",", $values));
-        $this->vContentDisposition = $disposition;
-        return $this;
-    }
-
-    /**
-     * Getts content disposition
-     * @return string
-     */
-    function getContentDisposition(){
-        return $this->vContentDisposition;
-    }
-
-    /**
-     * Getts send as name
-     * @return string
-     */
-    function getTransferFileName(){
-        return $this->vTransferFileName;
-    }
-
-    /**
-     * Setts send as name
-     * @param string $sendAs
-     * @return FileDownload
-     */
-    function setTransferFileName($name){
-        $this->vTransferFileName = pathinfo($name, PATHINFO_BASENAME);
-        return $this;
-    }
-
-
-    /**
-     * Setts speed limit
-     * @param int $speed Speed limit
-     * @return FileDownload
-     */
-    function setSpeedLimit($speed){
-        if(!is_int($speed)) throw new InvalidArgumentException("Max download speed must be intiger!");
-        if($speed<0) throw new InvalidArgumentException("Max download speed can't be smaller than zero!");
-        $availableMem = FDTools::getAvailableMemory();
-        $availableMemWithReserve = ($availableMem-100*1024);
-        if($availableMem !== null AND $speed>$availableMemWithReserve) throw new InvalidArgumentException("Max download speed can't be a bigger than available memory ".$availableMemWithReserve."b!");
-        $this->vSpeedLimit = (int)round($speed);
-        return $this;
-    }
-
-    /**
-     * Getts speed limit
-     * @return int
-     */
-    function getSpeedLimit(){
-        return $this->vSpeedLimit;
-    }
-
-
-    /**
-     * Returns mimetype of the file
-     *
-     * @param string $location  Everithing what accepts pathinfo()
-     * @return string           Mime type
-     */
-    public function getMimeType(){
-        if($this->vMimeType !== null) return $this->vMimeType;
-
-        $mime = "";
-        if (extension_loaded('fileinfo') and function_exists("finfo_open")) {
-        //TODO: test this code:
-            if ($finfo = @finfo_open(FILEINFO_MIME)) {
-                $mime = @finfo_file($finfo, $this->sourceFile);
-                @finfo_close($finfo);
-                if(FDTools::isValidMimeType($mime))
-                    return $mime;
-            }
-        }
-
-        if(function_exists("mime_content_type")) {
-            $mimeTmp = mime_content_type($this->sourceFile);
-            if(preg_match('/^[a-z\\-]*\\/[a-z\\-]*$/i',$mimeTmp))
-                $mime = $mimeTmp;
-            if(FDTools::isValidMimeType($mime))
-                return $mime;
-        }
-
-        // By file extension from ini file
-        $cache = Environment::getCache("FileDownloader");
-        if(!IsSet($cache["mime-types"]))
-            $cache["mime-types"] = parse_ini_file(dirname(__FILE__)."\\mime.ini");
-        $mimetypes = $cache["mime-types"];
-
-        $extension = pathinfo($this->transferFileName, PATHINFO_EXTENSION);
-        if (array_key_exists($extension, $mimetypes))
-            $mime = $mimetypes[$extension];
-
-        if(FDTools::isValidMimeType($mime))
-            return $mime;
-        else
-            return "application/octet-stream";
-    }
-
-    /**
-     * Setts Mime-type
-     * @param string $mime Mime-type
-     * @return FileDownload
-     */
-    public function setMimeType($mime){
-        $this->vMimeType = $mime;
-        return $this;
-    }
-
-    /**
-     * Getts file size
-     * @return int
-     */
-    public function getSourceFileSize(){
-        return filesize($this->sourceFile);
-    }
-
-    /**
-     * implementation od IPresenterResponse
-     */
-    function send() {
-	    $this->download();
-    }
-
-    /**
-     * Download the file!
-     * @param IDownloader $downloader 
-     */
-    function download(IDownloader $downloader = null){
-        $req = Environment::getHttpRequest();
-        $res = Environment::getHttpResponse();
-	
-	if(self::$closeSession) {
-		$ses = Environment::getSession();
-		if($ses->isStarted()) {
-			$ses->close();
+	function  __construct() {
+		$this->vTransferID = time()."-".rand();
+		foreach(self::$defaults AS $key => $val) {
+			$this->$key = $val;
 		}
 	}
 
-        if($downloader === null)
-            $downloaders = self::getFileDownloaders();
-        else
-            $downloaders = array($downloader);
+	/**
+	 * Getts transfer identificator
+	 * @return string
+	 */
+	public function getTransferId() {
+		return $this->vTransferID;
+	}
 
-        if(count($downloaders)<=0)
-            throw new InvalidStateException("There is no registred downloader!");
+	/**
+	 * Setts location of source file
+	 * @param string $location Location of the source file
+	 * @return FileDownload
+	 */
+	function setSourceFile($location) {
+		if($location === null) {
+			$this->vSourceFile = null;
+		}else {
+			if(!file_exists($location)) throw new BadRequestException("File not found at '".$location."'!");
+			if(!is_readable($location)) throw new InvalidStateException("File is NOT readable!");
+			$this->transferFileName = pathinfo($location, PATHINFO_BASENAME);
+			$this->vSourceFile = realpath($location);
+		}
+		return $this;
+	}
 
-        krsort($downloaders);
+	/**
+	 * Getts location of the source file
+	 * @return FileDownload
+	 */
+	function getSourceFile() {
+		if($this->vSourceFile === null) throw new InvalidStateException("Location is not set!");
+		return $this->vSourceFile;
+	}
 
-        $lastException = null;
+	/**
+	 * Setts content disposition
+	 * @param string $disposition
+	 * @return FileDownload
+	 */
+	function setContentDisposition($disposition) {
+		$values = array("inline","attachment");
+		if(!in_array($disposition,$values))
+			throw new InvalidArgumentException("Content disposition must be one of these: ".implode(",", $values));
+		$this->vContentDisposition = $disposition;
+		return $this;
+	}
 
-        foreach($downloaders AS $downloader){
-            if($downloader instanceof IDownloader and $downloader->isCompatible($this)){
-                try {
-                    FDTools::clearHeaders($res); // Delete all headers
-                    $this->transferredBytes = 0;
-                    $this->onBeforeDownloaderStarts($this,$downloader);
-                    $downloader->download($this); // Start download
-                    $this->onComplete($this,$downloader);
-                    die(); // If all gone ok -> die
-                } catch (FDSkypeMeException $e) {
-                    if($res->isSent())
-                        throw new InvalidStateException("Headers are already sent! Can't skip downloader.");
-                    else
-                        continue;
-                } catch (Exception $e){
-                    if(!$res->isSent())
-                        FDTools::clearHeaders($res);
-                    throw $e;
-                }
-            }
-        }
+	/**
+	 * Getts content disposition
+	 * @return string
+	 */
+	function getContentDisposition() {
+		return $this->vContentDisposition;
+	}
 
-        // Pokud se soubor nějakým způsobem odešle - toto už se nespustí
-        if($lastException instanceof Exception){
-            FDTools::clearHeaders(Environment::getHttpResponse(),TRUE);
-            throw $lastException;
-        }
+	/**
+	 * Getts send as name
+	 * @return string
+	 */
+	function getTransferFileName() {
+		return $this->vTransferFileName;
+	}
 
-        if($req->getHeader("Range"))
-            FDTools::_HTTPError(416); // Požadavek na range
-        else
-            $res->setCode(500);
-        throw new InvalidStateException("There is no compatible downloader (all downloader returns downloader->isComplatible()=false or was skipped)!");
-    }
+	/**
+	 * Setts send as name
+	 * @param string $sendAs
+	 * @return FileDownload
+	 */
+	function setTransferFileName($name) {
+		$this->vTransferFileName = pathinfo($name, PATHINFO_BASENAME);
+		return $this;
+	}
+
+
+	/**
+	 * Setts speed limit
+	 * @param int $speed Speed limit
+	 * @return FileDownload
+	 */
+	function setSpeedLimit($speed) {
+		if(!is_int($speed)) throw new InvalidArgumentException("Max download speed must be intiger!");
+		if($speed<0) throw new InvalidArgumentException("Max download speed can't be smaller than zero!");
+		$availableMem = FDTools::getAvailableMemory();
+		$availableMemWithReserve = ($availableMem-100*1024);
+		if($availableMem !== null AND $speed>$availableMemWithReserve) throw new InvalidArgumentException("Max download speed can't be a bigger than available memory ".$availableMemWithReserve."b!");
+		$this->vSpeedLimit = (int)round($speed);
+		return $this;
+	}
+
+	/**
+	 * Getts speed limit
+	 * @return int
+	 */
+	function getSpeedLimit() {
+		return $this->vSpeedLimit;
+	}
+
+
+	/**
+	 * Returns mimetype of the file
+	 *
+	 * @param string $location  Everithing what accepts pathinfo()
+	 * @return string           Mime type
+	 */
+	public function getMimeType() {
+		if($this->vMimeType !== null) return $this->vMimeType;
+
+		$mime = "";
+		if (extension_loaded('fileinfo') and function_exists("finfo_open")) {
+			//TODO: test this code:
+			if ($finfo = @finfo_open(FILEINFO_MIME)) {
+				$mime = @finfo_file($finfo, $this->sourceFile);
+				@finfo_close($finfo);
+				if(FDTools::isValidMimeType($mime))
+					return $mime;
+			}
+		}
+
+		if(function_exists("mime_content_type")) {
+			$mimeTmp = mime_content_type($this->sourceFile);
+			if(preg_match('/^[a-z\\-]*\\/[a-z\\-]*$/i',$mimeTmp))
+				$mime = $mimeTmp;
+			if(FDTools::isValidMimeType($mime))
+				return $mime;
+		}
+
+		// By file extension from ini file
+		$cache = Environment::getCache("FileDownloader");
+		if(!IsSet($cache["mime-types"]))
+			$cache["mime-types"] = parse_ini_file(dirname(__FILE__)."\\mime.ini");
+		$mimetypes = $cache["mime-types"];
+
+		$extension = pathinfo($this->transferFileName, PATHINFO_EXTENSION);
+		if (array_key_exists($extension, $mimetypes))
+			$mime = $mimetypes[$extension];
+
+		if(FDTools::isValidMimeType($mime))
+			return $mime;
+		else
+			return "application/octet-stream";
+	}
+
+	/**
+	 * Setts Mime-type
+	 * @param string $mime Mime-type
+	 * @return FileDownload
+	 */
+	public function setMimeType($mime) {
+		$this->vMimeType = $mime;
+		return $this;
+	}
+
+	/**
+	 * Getts file size
+	 * @return int
+	 */
+	public function getSourceFileSize() {
+		return filesize($this->sourceFile);
+	}
+
+	/**
+	 * implementation od IPresenterResponse
+	 */
+	function send() {
+		$this->download();
+	}
+
+	/**
+	 * Download the file!
+	 * @param IDownloader $downloader
+	 */
+	function download(IDownloader $downloader = null) {
+		$req = Environment::getHttpRequest();
+		$res = Environment::getHttpResponse();
+
+		if(self::$closeSession) {
+			$ses = Environment::getSession();
+			if($ses->isStarted()) {
+				$ses->close();
+			}
+		}
+
+		if($downloader === null)
+			$downloaders = self::getFileDownloaders();
+		else
+			$downloaders = array($downloader);
+
+		if(count($downloaders)<=0)
+			throw new InvalidStateException("There is no registred downloader!");
+
+		krsort($downloaders);
+
+		$lastException = null;
+
+		foreach($downloaders AS $downloader) {
+			if($downloader instanceof IDownloader and $downloader->isCompatible($this)) {
+				try {
+					FDTools::clearHeaders($res); // Delete all headers
+					$this->transferredBytes = 0;
+					$this->onBeforeDownloaderStarts($this,$downloader);
+					$downloader->download($this); // Start download
+					$this->onComplete($this,$downloader);
+					die(); // If all gone ok -> die
+				} catch (FDSkypeMeException $e) {
+					if($res->isSent())
+						throw new InvalidStateException("Headers are already sent! Can't skip downloader.");
+					else
+						continue;
+				} catch (Exception $e) {
+					if(!$res->isSent())
+						FDTools::clearHeaders($res);
+					throw $e;
+				}
+			}
+		}
+
+		// Pokud se soubor nějakým způsobem odešle - toto už se nespustí
+		if($lastException instanceof Exception) {
+			FDTools::clearHeaders(Environment::getHttpResponse(),TRUE);
+			throw $lastException;
+		}
+
+		if($req->getHeader("Range"))
+			FDTools::_HTTPError(416); // Požadavek na range
+		else
+			$res->setCode(500);
+		throw new InvalidStateException("There is no compatible downloader (all downloader returns downloader->isComplatible()=false or was skipped)!");
+	}
 }
 
 /* Register default downloaders */
@@ -569,9 +568,13 @@ FileDownload::registerFileDownloader(new AdvancedDownloader);
 /**
  * When some http error
  */
-class FileDownloaderException extends Exception {}
+class FileDownloaderException extends Exception {
+
+}
 
 /**
  * When downloader throws this exception -> it will be skipped
  */
-class FDSkypeMeException extends Exception {}
+class FDSkypeMeException extends Exception {
+
+}

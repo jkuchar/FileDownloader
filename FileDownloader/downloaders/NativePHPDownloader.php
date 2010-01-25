@@ -46,29 +46,27 @@
  * @author      Jan Kuchař
  * @version     $Id$
  */
-class NativePHPDownloader extends BaseDownloader
-{
-    /**
-     * Download file!
-     * @param FileDownload $file
-     */
-    function download(FileDownload $file){
-        $this->sendStandardFileHeaders($file,$this);
-        $file->onBeforeOutputStarts($file,$this);
-        if(!@readfile($file->sourceFile)){
-            throw new InvalidStateException("PHP readfile() function fails!");
-        }
-    }
+class NativePHPDownloader extends BaseDownloader {
 
-    /**
-     * Is this downloader compatible?
-     * @param FileDownload $file
-     * @return bool TRUE if is compatible; FALSE if not
-     */
-    function isCompatible(FileDownload $file){
-        $req = Environment::getHttpRequest();
-        if($req->getHeader("Range"))
-            return false;
-        return true;
-    }
+	/**
+	 * Download file!
+	 * @param FileDownload $file
+	 */
+	function download(FileDownload $file) {
+		$this->sendStandardFileHeaders($file,$this);
+		$file->onBeforeOutputStarts($file,$this);
+		if(!@readfile($file->sourceFile)) {
+			throw new InvalidStateException("PHP readfile() function fails!");
+		}
+	}
+
+	/**
+	 * Is this downloader compatible?
+	 * @param FileDownload $file
+	 * @param bool $isLast Is this last downloader in list?
+	 * @return bool TRUE if is compatible; FALSE if not
+	 */
+	function isCompatible(FileDownload $file) {
+		return true;
+	}
 }

@@ -42,6 +42,6 @@ define("APP_DIR",dirname(__FILE__));
 require_once "../load.php"; // Loads nette
 
 FileDownload::getInstance()
-    ->setSourceFile("source.txt")
-    ->setContentDisposition(FileDownload::CONTENT_DISPOSITION_INLINE)
-    ->download();
+	->setSourceFile("source.txt")
+	->setContentDisposition(FileDownload::CONTENT_DISPOSITION_INLINE)
+	->download();

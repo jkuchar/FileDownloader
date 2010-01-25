@@ -46,16 +46,16 @@
  * @version     $Id$
  */
 interface IDownloader {
-    /**
-     * Download file!
-     * @param FileDownload $file
-     */
-    function download(FileDownload $file);
+	/**
+	 * Download file!
+	 * @param FileDownload $file
+	 */
+	function download(FileDownload $file);
 
-    /**
-     * Is this downloader compatible?
-     * @param FileDownload $file
-     * @return bool TRUE if is compatible; FALSE if not
-     */
-    function isCompatible(FileDownload $file);
+	/**
+	 * Is this downloader compatible?
+	 * @param FileDownload $file
+	 * @return bool TRUE if is compatible; FALSE if not
+	 */
+	function isCompatible(FileDownload $file);
 }

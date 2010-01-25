@@ -44,8 +44,8 @@ require_once "../load.php";
 
 
 FileDownload::getInstance()
-    ->setSourceFile("source.txt")
-    ->setSpeedLimit(5*FDTools::BYTE)
+	->setSourceFile("source.txt")
+	->setSpeedLimit(5*FDTools::BYTE)
 //    ->setTransferFileName("test.txt")
 //    ->setMimeType("plain/text")
 //    ->addBeforeDownloaderStartsCallback("onBeforeDownloaderStarts")
@@ -56,4 +56,4 @@ FileDownload::getInstance()
 //    ->addAbortCallback("onAbort")
 //    ->addTransferContinueCallback("onTransferContinue")
 //    ->addNewTransferStartCallback("onNewTransferStart")
-    ->download();
+	->download();

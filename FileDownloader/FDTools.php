@@ -45,200 +45,196 @@
  * @author      Jan Kuchař
  * @version     $Id$
  */
-class FDTools extends Object{
-    
-    const BYTE  = 1;
-    const KILOBYTE = 1024;
-    const MEGABYTE = 1048576;
-    const GYGABYTE = 1073741824;
-    const TERABYTE = 1099511627776;
+class FDTools extends Object {
 
-    /**
-     * Buffer for FDTools::readfile()
-     * @var int
-     */
-    static public $readFileBuffer = 131072; // 128kb
+	const BYTE  = 1;
+	const KILOBYTE = 1024;
+	const MEGABYTE = 1048576;
+	const GYGABYTE = 1073741824;
+	const TERABYTE = 1099511627776;
 
-    static function getAvailableMemory(){
-        $mem = self::parsePHPIniMemoryValue(ini_get("memory_limit"));
-        if($mem == 0) return null;
-        return $mem-memory_get_usage();
-    }
+	/**
+	 * Buffer for FDTools::readfile()
+	 * @var int
+	 */
+	static public $readFileBuffer = 131072; // 128kb
 
-    /**
-     * Parse php ini file memory values (5G,10M,3K)
-     * @param string $phpIniValueStr
-     * @return int
-     */
-    static function parsePHPIniMemoryValue($phpIniValueStr){
-        $phpIniValueInt = (int)$phpIniValueStr;
-        if($phpIniValueInt == 0) return 0;
-        switch (substr($phpIniValueStr, -1, 1)) {
-          case "K":
-              $phpIniValueInt *= self::KILOBYTE;
-              break;
-          case "M":
-              $phpIniValueInt *= self::MEGABYTE;;
-              break;
-          case "G":
-              $phpIniValueInt *= self::GYGABYTE;
-              break;
-          case "T":
-              $phpIniValueInt *= self::TERABYTE;
-              break;
-          default:
-              throw new InvalidStateException("Can't parse php ini value!");
-        }
-        return $phpIniValueInt;
-    }
+	static function getAvailableMemory() {
+		$mem = self::parsePHPIniMemoryValue(ini_get("memory_limit"));
+		if($mem == 0) return null;
+		return $mem-memory_get_usage();
+	}
 
-    /**
-     * Clears all http headers
-     * @param IHTTPResponse $res
-     * @return IHTTPResponse
-     */
-    static function clearHeaders(IHTTPResponse $res,$setContentType=false){
-        $res->setCode(IHTTPResponse::S200_OK);
-        foreach($res->getHeaders() AS $key => $val){
-            $res->setHeader($key, null);
-        }
-        if($setContentType === true) $res->setContentType("text/html", "UTF-8");
-        return $res;
-    }
+	/**
+	 * Parse php ini file memory values (5G,10M,3K)
+	 * @param string $phpIniValueStr
+	 * @return int
+	 */
+	static function parsePHPIniMemoryValue($phpIniValueStr) {
+		$phpIniValueInt = (int)$phpIniValueStr;
+		if($phpIniValueInt == 0) return 0;
+		switch (substr($phpIniValueStr, -1, 1)) {
+			case "K":
+				$phpIniValueInt *= self::KILOBYTE;
+				break;
+			case "M":
+				$phpIniValueInt *= self::MEGABYTE;
+				;
+				break;
+			case "G":
+				$phpIniValueInt *= self::GYGABYTE;
+				break;
+			case "T":
+				$phpIniValueInt *= self::TERABYTE;
+				break;
+			default:
+				throw new InvalidStateException("Can't parse php ini value!");
+		}
+		return $phpIniValueInt;
+	}
 
-    /**
-     * Setts php time limit
-     * @param int $time     Time limit
-     * @return bool
-     */
-    static function setTimeLimit($time=0){
-        if(!function_exists("ini_get"))
-            throw new InvalidStateException("Function ini_get must be allowed.");
+	/**
+	 * Clears all http headers
+	 * @param IHTTPResponse $res
+	 * @return IHTTPResponse
+	 */
+	static function clearHeaders(IHTTPResponse $res,$setContentType=false) {
+		$res->setCode(IHTTPResponse::S200_OK);
+		foreach($res->getHeaders() AS $key => $val) {
+			$res->setHeader($key, null);
+		}
+		if($setContentType === true) $res->setContentType("text/html", "UTF-8");
+		return $res;
+	}
 
-        if((int)@ini_get("max_execution_time") === $time)
-            return true;
+	/**
+	 * Setts php time limit
+	 * @param int $time     Time limit
+	 * @return bool
+	 */
+	static function setTimeLimit($time=0) {
+		if(!function_exists("ini_get"))
+			throw new InvalidStateException("Function ini_get must be allowed.");
 
-        if(function_exists("set_time_limit"))
-            @set_time_limit($time);
-        elseif(function_exists("ini_set"))
-            @ini_set("max_execution_time", $time);
+		if((int)@ini_get("max_execution_time") === $time)
+			return true;
 
-        if((int)@ini_get("max_execution_time") === $time)
-            return true;
-        
-        return false;
-    }
+		if(function_exists("set_time_limit"))
+			@set_time_limit($time);
+		elseif(function_exists("ini_set"))
+			@ini_set("max_execution_time", $time);
 
-    /**
-     * Generates ETag and returns
-     *
-     * @param string $location    Location to source file
-     * @return string             ETag
-     */
-    static function getETag($location){
-        return "\"".md5($location.filemtime($location).filesize($location))."\"";
-    }
+		if((int)@ini_get("max_execution_time") === $time)
+			return true;
 
-    /**
-     * Returns filename (but if IE fix the bug)
-     *
-     * @link http://cz2.php.net/manual/en/function.fpassthru.php#25801
-     * @author Unknown
-     * @param string $basename Path to file or filename
-     * @return string
-     */
-    static function getContentDispositionHeaderData($basename){
-        $basename = basename($basename);
-        $req = Environment::getHttpRequest();
-        $userAgent = $req->getHeader("User-Agent");
-        if ($userAgent AND strstr($userAgent, "MSIE"))
-        {
-          // workaround for IE filename bug with multiple periods / multiple dots in filename
-          // that adds square brackets to filename - eg. setup.abc.exe becomes setup[1].abc.exe
-          $iefilename = preg_replace('/\./', '%2e', $basename, substr_count($basename, '.') - 1);
-        }
-        return $basename;
-    }
+		return false;
+	}
 
-    /**
-     * Sends http error to client
-     *
-     * @author Jan Kuchař
-     * @param int $code       HTTP code
-     * @param string $message HTTP status
-     */
-    static function _HTTPError($code,$message=null){
-        $errors = array(
-          416=>"Requested Range not satisfiable"
-        );
-        if($message===null and isset($errors[$code]))
-          $message = $errors[$code];
-        $res = Environment::getHttpResponse();
-        $res->setCode($code);
-        $res->setContentType("plain/text","UTF-8");
-        die("<html><body><h1>HTTP Error ".$code." - ".$message."</h1><p>".$message."</p></body></html>");
-    }
+	/**
+	 * Generates ETag and returns
+	 *
+	 * @param string $location    Location to source file
+	 * @return string             ETag
+	 */
+	static function getETag($location) {
+		return "\"".md5($location.filemtime($location).filesize($location))."\"";
+	}
 
-    /**
-     * Checks if mime type is valid
-     * @param string $mime      Mime-type
-     * @return bool
-     */
-    static function isValidMimeType($mime){
-        $mime = (string)$mime;
-        if(preg_match('/^[a-z\\-]*\\/[a-z\\-]*$/i',$mime))
-            return true;
-        else
-            return false;
-    }
+	/**
+	 * Returns filename (but if IE fix the bug)
+	 *
+	 * @link http://cz2.php.net/manual/en/function.fpassthru.php#25801
+	 * @author Unknown
+	 * @param string $basename Path to file or filename
+	 * @return string
+	 */
+	static function getContentDispositionHeaderData($basename) {
+		$basename = basename($basename);
+		$req = Environment::getHttpRequest();
+		$userAgent = $req->getHeader("User-Agent");
+		if ($userAgent AND strstr($userAgent, "MSIE")) {
+			// workaround for IE filename bug with multiple periods / multiple dots in filename
+			// that adds square brackets to filename - eg. setup.abc.exe becomes setup[1].abc.exe
+			$iefilename = preg_replace('/\./', '%2e', $basename, substr_count($basename, '.') - 1);
+		}
+		return $basename;
+	}
 
-    /**
-     * Sends file to browser. (enhanced readfile())
-     * This function do not send any headers!
-     *
-     * It is strongly recomended to set time limit to zero. ( FDTools::setTimeLimit(0) )
-     * If time limit gone before file download ends download may be corrupted!
-     *
-     * Sources:
-     *    @link http://cz2.php.net/manual/en/function.fpassthru.php#47110
-     *    @link http://cz2.php.net/manual/en/function.readfile.php#86244
-     *    @link http://cz2.php.net/manual/en/function.readfile.php#83653
-     *
-     * @author Jan Kuchař
-     * @param string $location      File location
-     * @param int $start            Start byte
-     * @param int $end              End byte
-     * @param bool $speedLimit      Bytes per second - zero is unlimited
-     * @param int $buffer           Buffer size in bytes
-     */
-    public static function readFile($location,$start=0,$end=null,$speedLimit=0)
-    {
-        $buffer = self::$readFileBuffer;
-        $sleep = false;
-        if(is_int($speedLimit) and $speedLimit>0)
-        {
-          $sleep  = true;
-          $buffer = (int)round($speedLimit);
-        }
-        if($buffer<1) throw new InvalidArgumentException("Buffer must be bigger than zero!");
-        if($buffer>(self::getAvailableMemory()*0.9)) throw new InvalidArgumentException("Buffer is too big! (bigger than available memory)");
-        
-        $fp = fopen($location,"rb");
-        if(!$fp) throw new InvalidStateException("Can't open file for reading!");
-        if($end===null) $end = filesize($location);
-        fseek($fp, $start); // Move file pointer to the start of the download
-        while(!feof($fp) && ($p = ftell($fp)) <= $end)
-        {
-            if ($p + $buffer > $end)
-            {
-                // In case we're only outputtin a chunk, make sure we don't
-                // read past the length
-                $buffer = $end - $p + 1;
-            }
-            echo fread($fp, $buffer);
-            flush();
-            if($sleep==true) sleep(1);
-        }
-        fclose($fp);
-    }
+	/**
+	 * Sends http error to client
+	 *
+	 * @author Jan Kuchař
+	 * @param int $code       HTTP code
+	 * @param string $message HTTP status
+	 */
+	static function _HTTPError($code,$message=null) {
+		$errors = array(
+			416=>"Requested Range not satisfiable"
+		);
+		if($message===null and isset($errors[$code]))
+			$message = $errors[$code];
+		$res = Environment::getHttpResponse();
+		$res->setCode($code);
+		$res->setContentType("plain/text","UTF-8");
+		die("<html><body><h1>HTTP Error ".$code." - ".$message."</h1><p>".$message."</p></body></html>");
+	}
+
+	/**
+	 * Checks if mime type is valid
+	 * @param string $mime      Mime-type
+	 * @return bool
+	 */
+	static function isValidMimeType($mime) {
+		$mime = (string)$mime;
+		if(preg_match('/^[a-z\\-]*\\/[a-z\\-]*$/i',$mime))
+			return true;
+		else
+			return false;
+	}
+
+	/**
+	 * Sends file to browser. (enhanced readfile())
+	 * This function do not send any headers!
+	 *
+	 * It is strongly recomended to set time limit to zero. ( FDTools::setTimeLimit(0) )
+	 * If time limit gone before file download ends download may be corrupted!
+	 *
+	 * Sources:
+	 *    @link http://cz2.php.net/manual/en/function.fpassthru.php#47110
+	 *    @link http://cz2.php.net/manual/en/function.readfile.php#86244
+	 *    @link http://cz2.php.net/manual/en/function.readfile.php#83653
+	 *
+	 * @author Jan Kuchař
+	 * @param string $location      File location
+	 * @param int $start            Start byte
+	 * @param int $end              End byte
+	 * @param bool $speedLimit      Bytes per second - zero is unlimited
+	 * @param int $buffer           Buffer size in bytes
+	 */
+	public static function readFile($location,$start=0,$end=null,$speedLimit=0) {
+		$buffer = self::$readFileBuffer;
+		$sleep = false;
+		if(is_int($speedLimit) and $speedLimit>0) {
+			$sleep  = true;
+			$buffer = (int)round($speedLimit);
+		}
+		if($buffer<1) throw new InvalidArgumentException("Buffer must be bigger than zero!");
+		if($buffer>(self::getAvailableMemory()*0.9)) throw new InvalidArgumentException("Buffer is too big! (bigger than available memory)");
+
+		$fp = fopen($location,"rb");
+		if(!$fp) throw new InvalidStateException("Can't open file for reading!");
+		if($end===null) $end = filesize($location);
+		fseek($fp, $start); // Move file pointer to the start of the download
+		while(!feof($fp) && ($p = ftell($fp)) <= $end) {
+			if ($p + $buffer > $end) {
+				// In case we're only outputtin a chunk, make sure we don't
+				// read past the length
+				$buffer = $end - $p + 1;
+			}
+			echo fread($fp, $buffer);
+			flush();
+			if($sleep==true) sleep(1);
+		}
+		fclose($fp);
+	}
 }
