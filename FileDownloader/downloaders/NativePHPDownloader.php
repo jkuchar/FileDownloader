@@ -50,9 +50,9 @@ class NativePHPDownloader extends BaseDownloader {
 
 	/**
 	 * Download file!
-	 * @param FileDownload $file
+	 * @param BaseFileDownload $file
 	 */
-	function download(FileDownload $file) {
+	function download(BaseFileDownload $file) {
 		$this->sendStandardFileHeaders($file,$this);
 		$file->onBeforeOutputStarts($file,$this);
 		if(!@readfile($file->sourceFile)) {
@@ -62,11 +62,11 @@ class NativePHPDownloader extends BaseDownloader {
 
 	/**
 	 * Is this downloader compatible?
-	 * @param FileDownload $file
+	 * @param BaseFileDownload $file
 	 * @param bool $isLast Is this last downloader in list?
 	 * @return bool TRUE if is compatible; FALSE if not
 	 */
-	function isCompatible(FileDownload $file) {
+	function isCompatible(BaseFileDownload $file) {
 		return true;
 	}
 }

@@ -49,10 +49,10 @@ abstract class BaseDownloader extends Object implements IDownloader {
 
 	/**
 	 * Sends a standard headers for file download
-	 * @param FileDownload $file            File
+	 * @param BaseFileDownload $file            File
 	 * @param BaseDownloader $downloader    Downloader of the file
 	 */
-	protected function sendStandardFileHeaders(FileDownload $file,BaseDownloader $downloader=null) {
+	protected function sendStandardFileHeaders(BaseFileDownload $file,BaseDownloader $downloader=null) {
 		$res = Environment::getHttpResponse();
 		$req = Environment::getHttpRequest();
 		//FDTools::clearHeaders($res); // Voláno už v FileDownload.php

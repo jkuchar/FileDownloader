@@ -50,12 +50,12 @@ interface IDownloader {
 	 * Download file!
 	 * @param FileDownload $file
 	 */
-	function download(FileDownload $file);
+	function download(BaseFileDownload $file);
 
 	/**
 	 * Is this downloader compatible?
 	 * @param FileDownload $file
 	 * @return bool TRUE if is compatible; FALSE if not
 	 */
-	function isCompatible(FileDownload $file);
+	function isCompatible(BaseFileDownload $file);
 }

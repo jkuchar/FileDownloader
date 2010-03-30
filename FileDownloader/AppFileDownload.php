@@ -47,7 +47,7 @@
  *
  * @property Component $parent Parent component
  */
-class AppFileDownload extends FileDownload implements IPresenterResponse {
+class AppFileDownload extends BaseFileDownload implements IPresenterResponse {
 	/**
 	 * Parent of this object
 	 * @var Component
@@ -80,7 +80,7 @@ class AppFileDownload extends FileDownload implements IPresenterResponse {
 	/**
 	 * Setts AppFileDownload parent
 	 * @param Component $parent
-	 * @return <type>
+	 * @return AppFileDownload
 	 */
 	function setParent(Component $parent){
 		$this->parent = $parent;
@@ -110,10 +110,11 @@ class AppFileDownload extends FileDownload implements IPresenterResponse {
 		$this->downloader = $downloader;
 
 		// Call terminate on presenter
-		if($this->parent instanceof Presenter)
-			$presenter = $this->parent;
-		else
-			$presenter = $this->parent->lookup("Nette/Application/Presenter",true);
+		if($this->parent instanceof Presenter) {
+                    $presenter = $this->parent;
+                } else {
+                    $presenter = $this->parent->lookup("Nette/Application/Presenter",true);
+                }
 
 		$presenter->terminate($this);
 

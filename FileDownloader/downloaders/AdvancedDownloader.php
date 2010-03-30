@@ -61,9 +61,9 @@ class AdvancedDownloader extends BaseDownloader {
 
 	/**
 	 * Download file!
-	 * @param FileDownload $file
+	 * @param BaseFileDownload $file
 	 */
-	function download(FileDownload $transfer) {
+	function download(BaseFileDownload $transfer) {
 		$this->sendStandardFileHeaders($transfer,$this);
 
 		@ignore_user_abort(true); // For onAbort event
@@ -224,10 +224,10 @@ class AdvancedDownloader extends BaseDownloader {
 
 	/**
 	 * Is this downloader compatible?
-	 * @param FileDownload $file
+	 * @param BaseFileDownload $file
 	 * @return bool TRUE if is compatible; FALSE if not
 	 */
-	function isCompatible(FileDownload $file) {
+	function isCompatible(BaseFileDownload $file) {
 		if(self::$checkEnvironmentSettings === true) {
 			if(FDTools::setTimeLimit(0)!==true)
 				return false;
