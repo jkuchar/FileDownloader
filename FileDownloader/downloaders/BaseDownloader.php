@@ -60,7 +60,7 @@ abstract class BaseDownloader extends Object implements IDownloader {
 		$res->setContentType($file->mimeType,"UTF-8");
 		$res->setHeader("X-File-Downloader", "File Downloader (http://filedownloader.projekty.mujserver.net)");
 		if($downloader !== null)
-			$res->setHeader("X-FileDownloader-Actual-Script", $downloader->getClass());
+			$res->setHeader("X-FileDownloader-Actual-Script", $downloader->getReflection()->name);
 		$res->setHeader('Expires', '0');
 		$res->setHeader('Cache-Control', 'must-revalidate, post-check=0, pre-check=0');
 		$res->setHeader('Pragma', 'public'); // Fix for IE - Content-Disposition
