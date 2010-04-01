@@ -82,7 +82,7 @@ class AppFileDownload extends BaseFileDownload implements IPresenterResponse {
 	 * @param Component $parent
 	 * @return AppFileDownload
 	 */
-	function setParent(Component $parent){
+	function setParent(Component $parent) {
 		$this->parent = $parent;
 		return $this;
 	}
@@ -111,10 +111,10 @@ class AppFileDownload extends BaseFileDownload implements IPresenterResponse {
 
 		// Call terminate on presenter
 		if($this->parent instanceof Presenter) {
-                    $presenter = $this->parent;
-                } else {
-                    $presenter = $this->parent->lookup("Nette/Application/Presenter",true);
-                }
+			$presenter = $this->parent;
+		} else {
+			$presenter = $this->parent->lookup("Nette/Application/Presenter",true);
+		}
 
 		$presenter->terminate($this);
 

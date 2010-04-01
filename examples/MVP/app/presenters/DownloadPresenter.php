@@ -26,9 +26,9 @@ class DownloadPresenter extends BasePresenter {
 
 	function handleDownloadFluent() {
 		AppFileDownload::getInstance($this)
-		->setSourceFile(__FILE__)
-		->setSpeedLimit(5*FDTools::BYTE)
-		->download();
+			->setSourceFile(__FILE__)
+			->setSpeedLimit(5*FDTools::BYTE)
+			->download();
 	}
 
 	function handleDownloadClassicTerminate() {

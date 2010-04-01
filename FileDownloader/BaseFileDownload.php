@@ -113,6 +113,7 @@ abstract class BaseFileDownload extends Object {
 	 * Getts new instance of self
 	 * @return FileDownload
 	 */
+	// moved to subclasses
 	//public static function getInstance() {
 	//	return new FileDownload();
 	//}
