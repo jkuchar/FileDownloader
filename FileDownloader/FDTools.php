@@ -156,6 +156,7 @@ class FDTools extends Object {
 			// workaround for IE filename bug with multiple periods / multiple dots in filename
 			// that adds square brackets to filename - eg. setup.abc.exe becomes setup[1].abc.exe
 			$iefilename = preg_replace('/\./', '%2e', $basename, substr_count($basename, '.') - 1);
+			$basename = rawurlencode($basename); // Czech chars in filename
 		}
 		return $basename;
 	}
