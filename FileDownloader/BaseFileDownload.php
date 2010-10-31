@@ -161,6 +161,12 @@ abstract class BaseFileDownload extends Object {
 	private $vMimeType = null;
 
 	/**
+	 * Enable browser cache
+	 * @var Bool|null to auto
+	 */
+	public $enableBrowserCache = null;
+
+	/**
 	 * How many bytes is sent
 	 * @var int
 	 */
@@ -429,7 +435,6 @@ abstract class BaseFileDownload extends Object {
 		return $this->vSpeedLimit;
 	}
 
-
 	/**
 	 * Returns mimetype of the file
 	 *
@@ -505,6 +510,12 @@ abstract class BaseFileDownload extends Object {
 			if($ses->isStarted()) {
 				$ses->close();
 			}
+		}
+
+		if($this->getContentDisposition() == "inline" AND is_null($this->enableBrowserCache)) {
+			$this->enableBrowserCache = true;
+		}else{
+			$this->enableBrowserCache = false;
 		}
 
 		if($downloader === null)

@@ -52,23 +52,48 @@ abstract class BaseDownloader extends Object implements IDownloader {
 	 * @param BaseFileDownload $file            File
 	 * @param BaseDownloader $downloader    Downloader of the file
 	 */
-	protected function sendStandardFileHeaders(BaseFileDownload $file,BaseDownloader $downloader=null) {
+	protected function sendStandardFileHeaders(BaseFileDownload $file, BaseDownloader $downloader=null) {
 		$res = Environment::getHttpResponse();
 		$req = Environment::getHttpRequest();
 		//FDTools::clearHeaders($res); // Voláno už v FileDownload.php
 
-		$res->setContentType($file->mimeType,"UTF-8");
+		$res->setContentType($file->mimeType, "UTF-8");
 		$res->setHeader("X-File-Downloader", "File Downloader (http://filedownloader.projekty.mujserver.net)");
-		if($downloader !== null)
+		if ($downloader !== null) {
 			$res->setHeader("X-FileDownloader-Actual-Script", $downloader->getReflection()->name);
-		$res->setHeader('Expires', '0');
-		$res->setHeader('Cache-Control', 'must-revalidate, post-check=0, pre-check=0');
+		}
+
 		$res->setHeader('Pragma', 'public'); // Fix for IE - Content-Disposition
-		$res->setHeader('Content-Disposition', $file->getContentDisposition().'; filename="'.FDTools::getContentDispositionHeaderData($file->transferFileName).'"');
+		$res->setHeader('Content-Disposition', $file->getContentDisposition() . '; filename="' . FDTools::getContentDispositionHeaderData($file->transferFileName) . '"');
 		$res->setHeader('Content-Description', 'File Transfer');
 		$res->setHeader('Content-Transfer-Encoding', 'binary');
 		$res->setHeader('Connection', 'close');
 		$res->setHeader('ETag', FDTools::getETag($file->sourceFile));
 		$res->setHeader('Content-Length', filesize($file->sourceFile));
+
+		// Cache control
+		if ($file->enableBrowserCache) {
+			$this->setupCacheHeaders($file);
+		} else {
+			$this->setupNonCacheHeaders($file);
+		}
 	}
+
+	protected function setupCacheHeaders(BaseFileDownload $file) {
+		$res = Environment::getHttpResponse();
+		$res->setExpiration(time() + 99999999);
+		$res->setHeader('Last-Modified', "Mon, 23 Jan 1978 10:00:00 GMT");
+		if (!empty($_SERVER["HTTP_IF_MODIFIED_SINCE"])) {
+			$res->setCode(HttpResponse::S304_NOT_MODIFIED);
+			//header("HTTP/1.1 304 Not Modified");
+			exit();
+		};
+	}
+
+	protected function setupNonCacheHeaders(BaseFileDownload $file) {
+		$res = Environment::getHttpResponse();
+		$res->setHeader('Expires', '0');
+		$res->setHeader('Cache-Control', 'must-revalidate, post-check=0, pre-check=0');
+	}
+
 }
