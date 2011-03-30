@@ -255,16 +255,18 @@ class FDTools extends Object {
 	 */
 	public static function filesize($file) {
 
-		// Dočasné řešení, funguje do 8GB
+		return filesize($file);
 
-		$INT = 4294967295;//2147483647+2147483647+1;
-		$size = filesize($file);
-		$fp = fopen($file, 'r');
-		fseek($fp, 0, SEEK_END);
-		if (ftell($fp)==0) $size += $INT;
-		fclose($file);
-		if ($size<0) $size += $INT;
-		return (float)$size;
+//		// Dočasné řešení, funguje do 8GB
+//
+//		$INT = 4294967295;//2147483647+2147483647+1;
+//		$size = filesize($file);
+//		$fp = fopen($file, 'r');
+//		fseek($fp, 0, SEEK_END);
+//		if (ftell($fp)==0) $size += $INT;
+//		fclose($file);
+//		if ($size<0) $size += $INT;
+//		return (float)$size;
 
 //		// filesize will only return the lower 32 bits of
 //		// the file's size! Make it unsigned.
