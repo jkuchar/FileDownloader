@@ -494,7 +494,7 @@ abstract class BaseFileDownload extends Object {
 	 * @return int
 	 */
 	public function getSourceFileSize() {
-		return filesize($this->sourceFile);
+		return FDTools::filesize($this->sourceFile);
 	}
 
 	/**

@@ -80,15 +80,15 @@ class AdvancedDownloader extends BaseDownloader {
 
 		// Now that we've gotten so far without errors we send the accept range header
 		/* At the moment we only support single ranges.
-         * Multiple ranges requires some more work to ensure it works correctly
-         * and comply with the spesifications: http://www.w3.org/Protocols/rfc2616/rfc2616-sec19.html#sec19.2
-         *
-         * Multirange support annouces itself with:
-         * header('Accept-Ranges: bytes');
-         *
-         * Multirange content must be sent with multipart/byteranges mediatype,
-         * (mediatype = mimetype)
-         * as well as a boundry header to indicate the various chunks of data.
+		 * Multiple ranges requires some more work to ensure it works correctly
+		 * and comply with the spesifications: http://www.w3.org/Protocols/rfc2616/rfc2616-sec19.html#sec19.2
+		 *
+		 * Multirange support annouces itself with:
+		 * header('Accept-Ranges: bytes');
+		 *
+		 * Multirange content must be sent with multipart/byteranges mediatype,
+		 * (mediatype = mimetype)
+		 * as well as a boundry header to indicate the various chunks of data.
 		*/
 
 		//$res->setHeader("Accept-Ranges", "0-".$this->end); // single-part - now not accepted by mozilla
@@ -173,7 +173,7 @@ class AdvancedDownloader extends BaseDownloader {
 
 		$fp = fopen($transfer->sourceFile,"rb");
 		if(!$fp) throw new InvalidStateException("Can't open file for reading!");
-		if($this->end===null) $this->end = filesize($transfer->sourceFile);
+		if($this->end===null) $this->end = FDTools::filesize($transfer->sourceFile);
 
 		fseek($fp, $this->start); // Move file pointer to the start of the download
 

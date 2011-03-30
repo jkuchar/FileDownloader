@@ -46,8 +46,7 @@
  * @version     $Id$
  */
 class FDTools extends Object {
-
-	const BYTE  = 1;
+	const BYTE = 1;
 	const KILOBYTE = 1024;
 	const MEGABYTE = 1048576;
 	const GYGABYTE = 1073741824;
@@ -61,8 +60,9 @@ class FDTools extends Object {
 
 	static function getAvailableMemory() {
 		$mem = self::parsePHPIniMemoryValue(ini_get("memory_limit"));
-		if($mem == 0) return null;
-		return $mem-memory_get_usage();
+		if ($mem == 0)
+			return null;
+		return $mem - memory_get_usage();
 	}
 
 	/**
@@ -71,8 +71,9 @@ class FDTools extends Object {
 	 * @return int
 	 */
 	static function parsePHPIniMemoryValue($phpIniValueStr) {
-		$phpIniValueInt = (int)$phpIniValueStr;
-		if($phpIniValueInt == 0) return 0;
+		$phpIniValueInt = (int) $phpIniValueStr;
+		if ($phpIniValueInt == 0)
+			return 0;
 		switch (substr($phpIniValueStr, -1, 1)) {
 			case "K":
 				$phpIniValueInt *= self::KILOBYTE;
@@ -98,12 +99,13 @@ class FDTools extends Object {
 	 * @param IHTTPResponse $res
 	 * @return IHTTPResponse
 	 */
-	static function clearHeaders(IHTTPResponse $res,$setContentType=false) {
+	static function clearHeaders(IHTTPResponse $res, $setContentType=false) {
 		$res->setCode(IHTTPResponse::S200_OK);
-		foreach($res->getHeaders() AS $key => $val) {
+		foreach ($res->getHeaders() AS $key => $val) {
 			$res->setHeader($key, null);
 		}
-		if($setContentType === true) $res->setContentType("text/html", "UTF-8");
+		if ($setContentType === true)
+			$res->setContentType("text/html", "UTF-8");
 		return $res;
 	}
 
@@ -113,18 +115,18 @@ class FDTools extends Object {
 	 * @return bool
 	 */
 	static function setTimeLimit($time=0) {
-		if(!function_exists("ini_get"))
+		if (!function_exists("ini_get"))
 			throw new InvalidStateException("Function ini_get must be allowed.");
 
-		if((int)@ini_get("max_execution_time") === $time)
+		if ((int) @ini_get("max_execution_time") === $time)
 			return true;
 
-		if(function_exists("set_time_limit"))
+		if (function_exists("set_time_limit"))
 			@set_time_limit($time);
-		elseif(function_exists("ini_set"))
+		elseif (function_exists("ini_set"))
 			@ini_set("max_execution_time", $time);
 
-		if((int)@ini_get("max_execution_time") === $time)
+		if ((int) @ini_get("max_execution_time") === $time)
 			return true;
 
 		return false;
@@ -137,7 +139,7 @@ class FDTools extends Object {
 	 * @return string             ETag
 	 */
 	static function getETag($location) {
-		return "\"".md5($location.filemtime($location).filesize($location))."\"";
+		return "\"" . md5($location . filemtime($location) . self::filesize($location)) . "\"";
 	}
 
 	/**
@@ -168,16 +170,16 @@ class FDTools extends Object {
 	 * @param int $code       HTTP code
 	 * @param string $message HTTP status
 	 */
-	static function _HTTPError($code,$message=null) {
+	static function _HTTPError($code, $message=null) {
 		$errors = array(
-			416=>"Requested Range not satisfiable"
+		    416 => "Requested Range not satisfiable"
 		);
-		if($message===null and isset($errors[$code]))
+		if ($message === null and isset($errors[$code]))
 			$message = $errors[$code];
 		$res = Environment::getHttpResponse();
 		$res->setCode($code);
-		$res->setContentType("plain/text","UTF-8");
-		die("<html><body><h1>HTTP Error ".$code." - ".$message."</h1><p>".$message."</p></body></html>");
+		$res->setContentType("plain/text", "UTF-8");
+		die("<html><body><h1>HTTP Error " . $code . " - " . $message . "</h1><p>" . $message . "</p></body></html>");
 	}
 
 	/**
@@ -186,8 +188,8 @@ class FDTools extends Object {
 	 * @return bool
 	 */
 	static function isValidMimeType($mime) {
-		$mime = (string)$mime;
-		if(preg_match('/^[a-z\\-]*\\/[a-z\\-]*$/i',$mime))
+		$mime = (string) $mime;
+		if (preg_match('/^[a-z\\-]*\\/[a-z\\-]*$/i', $mime))
 			return true;
 		else
 			return false;
@@ -212,21 +214,25 @@ class FDTools extends Object {
 	 * @param bool $speedLimit      Bytes per second - zero is unlimited
 	 * @param int $buffer           Buffer size in bytes
 	 */
-	public static function readFile($location,$start=0,$end=null,$speedLimit=0) {
+	public static function readFile($location, $start=0, $end=null, $speedLimit=0) {
 		$buffer = self::$readFileBuffer;
 		$sleep = false;
-		if(is_int($speedLimit) and $speedLimit>0) {
-			$sleep  = true;
-			$buffer = (int)round($speedLimit);
+		if (is_int($speedLimit) and $speedLimit > 0) {
+			$sleep = true;
+			$buffer = (int) round($speedLimit);
 		}
-		if($buffer<1) throw new InvalidArgumentException("Buffer must be bigger than zero!");
-		if($buffer>(self::getAvailableMemory()*0.9)) throw new InvalidArgumentException("Buffer is too big! (bigger than available memory)");
+		if ($buffer < 1)
+			throw new InvalidArgumentException("Buffer must be bigger than zero!");
+		if ($buffer > (self::getAvailableMemory() * 0.9))
+			throw new InvalidArgumentException("Buffer is too big! (bigger than available memory)");
 
-		$fp = fopen($location,"rb");
-		if(!$fp) throw new InvalidStateException("Can't open file for reading!");
-		if($end===null) $end = filesize($location);
+		$fp = fopen($location, "rb");
+		if (!$fp)
+			throw new InvalidStateException("Can't open file for reading!");
+		if ($end === null)
+			$end = self::filesize($location);
 		fseek($fp, $start); // Move file pointer to the start of the download
-		while(!feof($fp) && ($p = ftell($fp)) <= $end) {
+		while (!feof($fp) && ($p = ftell($fp)) <= $end) {
 			if ($p + $buffer > $end) {
 				// In case we're only outputtin a chunk, make sure we don't
 				// read past the length
@@ -234,8 +240,62 @@ class FDTools extends Object {
 			}
 			echo fread($fp, $buffer);
 			flush();
-			if($sleep==true) sleep(1);
+			if ($sleep == true)
+				sleep(1);
 		}
 		fclose($fp);
 	}
+
+	/**
+	 * Function that determines a file's size only with PHP functions,
+	 * for all files, also those > 4 GB:
+	 * @see http://www.php.net/manual/en/function.filesize.php#102135
+	 * @param string $file
+	 * @return float
+	 */
+	public static function filesize($file) {
+
+		// Dočasné řešení, funguje do 8GB
+
+		$INT = 4294967295;//2147483647+2147483647+1;
+		$size = filesize($file);
+		$fp = fopen($file, 'r');
+		fseek($fp, 0, SEEK_END);
+		if (ftell($fp)==0) $size += $INT;
+		fclose($file);
+		if ($size<0) $size += $INT;
+		return (float)$size;
+
+//		// filesize will only return the lower 32 bits of
+//		// the file's size! Make it unsigned.
+//		$fmod = filesize($file);
+//		if ($fmod < 0)
+//			$fmod += 2.0 * ((float)PHP_INT_MAX + 1);
+//
+//		// find the upper 32 bits
+//		$i = 0;
+//
+//		$myfile = fopen($file, "rb");
+//
+//		// feof has undefined behaviour for big files.
+//		// after we hit the eof with fseek,
+//		// fread may not be able to detect the eof,
+//		// but it also can't read bytes, so use it as an
+//		// indicator.
+//		while (strlen(fread($myfile, 1)) === 1) {
+//			fseek($myfile, PHP_INT_MAX-1, SEEK_CUR);
+//			$i++;
+//		}
+//
+//		fclose($myfile);
+//
+//		// $i is a multiplier for PHP_INT_MAX byte blocks.
+//		// return to the last multiple of 4, as filesize has modulo of 4 GB (lower 32 bits)
+//		if ($i % 2 == 1)
+//			$i--;
+//
+//		// add the lower 32 bit to our PHP_INT_MAX multiplier
+//		return ((float) ($i) * (PHP_INT_MAX + 1)) + $fmod;
+	}
+
 }

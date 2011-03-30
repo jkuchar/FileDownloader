@@ -69,7 +69,7 @@ abstract class BaseDownloader extends Object implements IDownloader {
 		$res->setHeader('Content-Transfer-Encoding', 'binary');
 		$res->setHeader('Connection', 'close');
 		$res->setHeader('ETag', FDTools::getETag($file->sourceFile));
-		$res->setHeader('Content-Length', filesize($file->sourceFile));
+		$res->setHeader('Content-Length', FDTools::filesize($file->sourceFile));
 
 		// Cache control
 		if ($file->enableBrowserCache) {
