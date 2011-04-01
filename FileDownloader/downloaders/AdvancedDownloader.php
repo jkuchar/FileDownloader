@@ -118,7 +118,7 @@ class AdvancedDownloader extends BaseDownloader {
 				// And make sure to get the end byte if spesified
 				if ($range{0} == '-') {
 					// The n-number of the last bytes is requested
-					$range_start = $this->size - (int)substr($range, 1);
+					$range_start = $this->size - (float)substr($range, 1);
 				}
 				else {
 					$range  = explode('-', $range);
