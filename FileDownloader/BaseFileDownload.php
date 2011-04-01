@@ -63,7 +63,7 @@
  * @property int $speedLimit            Speed limit
  * @property int $transferredBytes      How many bytes was sent to browser
  * @property int $contentDisposition    Content disposition: inline or attachment
- * @property-read int $sourceFileSize   File size
+ * @property-read float $sourceFileSize   File size
  * @property-read int $transferID       TransferId
  */
 abstract class BaseFileDownload extends Object {
@@ -491,7 +491,7 @@ abstract class BaseFileDownload extends Object {
 
 	/**
 	 * Getts file size
-	 * @return int
+	 * @return float
 	 */
 	public function getSourceFileSize() {
 		return FDTools::filesize($this->sourceFile);
