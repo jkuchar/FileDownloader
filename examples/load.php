@@ -47,6 +47,6 @@ $loader->addDirectory(dirname(__FILE__)."/../FileDownloader");
 $loader->addDirectory(dirname(__FILE__)."/../libs/BigFileTools");
 $loader->register();
 
-Debug::enable();
+Debug::enable(Debug::PRODUCTION);
 
 Environment::getHttpResponse()->setContentType("text/html", "UTF-8");
