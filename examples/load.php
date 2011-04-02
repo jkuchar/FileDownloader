@@ -44,6 +44,7 @@ date_default_timezone_set("Europe/Prague");
 $loader = new RobotLoader();
 $loader->addDirectory(APP_DIR);
 $loader->addDirectory(dirname(__FILE__)."/../FileDownloader");
+$loader->addDirectory(dirname(__FILE__)."/../libs/BigFileTools");
 $loader->register();
 
 Debug::enable();
