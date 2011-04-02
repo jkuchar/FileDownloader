@@ -60,10 +60,16 @@ class AdvancedDownloader extends BaseDownloader {
 	public $transferred = 0;
 
 	/**
+	 * @var BaseFileDownload
+	 */
+	public $currentTransfer;
+
+	/**
 	 * Download file!
 	 * @param BaseFileDownload $file
 	 */
 	function download(BaseFileDownload $transfer) {
+		$this->currentTransfer = $transfer;
 		$this->sendStandardFileHeaders($transfer,$this);
 
 		@ignore_user_abort(true); // For onAbort event
@@ -144,7 +150,7 @@ class AdvancedDownloader extends BaseDownloader {
 			} catch (FileDownloaderException $e) {
 				if($e->getCode() == 416) {
 					$res->setHeader("Content-Range", "bytes $this->start-$this->end/$this->size");
-					$this->_HTTPError(416);
+					FDTools::_HTTPError(416);
 				}else throw $e;
 			}
 			$res->setCode(206); // Partial content
@@ -194,6 +200,7 @@ class AdvancedDownloader extends BaseDownloader {
 			$this->position = $this->start;
 		}
 
+		$tmpTime = null;
 		if($sleep===false)
 			$tmpTime = time()+1; // Call onStatusChange next second!
 
@@ -206,30 +213,37 @@ class AdvancedDownloader extends BaseDownloader {
 			$data = fread($fp, $buffer);
 			echo $data;
 			$this->position += strlen($data);
-			
-			flush(); // PHP: Do not buffer it - send it to browser!
-			@ob_flush();
 
-			if(connection_status()!=CONNECTION_NORMAL) {
-				fclose($fp);
-				$transfer->onConnectionLost($transfer,$this);
-				if(connection_aborted()) {
-					$transfer->onAbort($transfer,$this);
-				}
-				die();
-			}
-			if($sleep==true OR $tmpTime<=time()) {
-				$transfer->transferredBytes = $this->transferred = $this->position-$this->start;
-				$transfer->onStatusChange($transfer,$this);
-				if(IsSet($tmpTime))
-					$tmpTime = time()+1;
-			}
-			if($sleep==true)
-				sleep(1);
+			$this->_afterBufferSent($sleep, $tmpTime, $fp);
 		}
 		fclose($fp);
 
 		$transfer->transferredBytes = $this->transferred = $this->length;
+		$this->currentTransfer = null;
+	}
+
+	protected function _afterBufferSent($sleep, $tmpTime, $fp=null) {
+		$transfer = $this->currentTransfer;
+
+		flush(); // PHP: Do not buffer it - send it to browser!
+		@ob_flush();
+
+		if(connection_status()!=CONNECTION_NORMAL) {
+			if($fp) fclose($fp);
+			$transfer->onConnectionLost($transfer,$this);
+			if(connection_aborted()) {
+				$transfer->onAbort($transfer,$this);
+			}
+			die();
+		}
+		if($sleep==true OR $tmpTime<=time()) {
+			$transfer->transferredBytes = $this->transferred = $this->position-$this->start;
+			$transfer->onStatusChange($transfer,$this);
+			if(IsSet($tmpTime))
+				$tmpTime = time()+1;
+		}
+		if($sleep==true)
+			sleep(1);
 	}
 
 	/**
