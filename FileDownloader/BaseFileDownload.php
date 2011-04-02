@@ -540,10 +540,11 @@ abstract class BaseFileDownload extends Object {
 					$this->onComplete($this,$downloader);
 					die(); // If all gone ok -> die
 				} catch (FDSkypeMeException $e) {
-					if($res->isSent())
+					if($res->isSent()) {
 						throw new InvalidStateException("Headers are already sent! Can't skip downloader.");
-					else
+					} else {
 						continue;
+					}
 				} catch (Exception $e) {
 					if(!$res->isSent())
 						FDTools::clearHeaders($res);
