@@ -71,7 +71,7 @@ class AdvancedDownloader extends BaseDownloader {
 		$req = Environment::getHttpRequest();
 		$res = Environment::getHttpResponse();
 
-		$this->size   = $transfer->sourceFileSize;
+		$filesize = $this->size   = $transfer->sourceFileSize;
 		$this->length = $this->size; // Content-length
 		$this->start  = 0;
 		$this->end    = $this->size - 1;
@@ -173,22 +173,43 @@ class AdvancedDownloader extends BaseDownloader {
 
 		$fp = fopen($transfer->sourceFile,"rb");
 		if(!$fp) throw new InvalidStateException("Can't open file for reading!");
-		if($this->end===null) $this->end = FDTools::filesize($transfer->sourceFile);
+		if($this->end===null) $this->end = $filesize-1;
 
-		fseek($fp, $this->start); // Move file pointer to the start of the download
+		if(fseek($fp, $this->start, SEEK_SET) === -1) { // Move file pointer to the start of the download
+			// Can not move pointer to begining of the filetransfer
+
+			// Use this hack (fread file to start position)
+			$destPos = $this->position = PHP_INT_MAX-1;
+			if(fseek($fp, $this->position, SEEK_SET) === -1) {
+				rewind($fp);
+				$this->position = 0;
+				throw new InvalidStateException("Can not move pointer to position ($destPos)");
+			}
+			$maxBuffer = 1024*1024;
+			while($this->position < $this->start) {
+				$this->position += strlen(fread($fp, min($maxBuffer, $this->start-$this->position)));
+			}
+		}else{
+			// We are at the begining
+			$this->position = $this->start;
+		}
 
 		if($sleep===false)
 			$tmpTime = time()+1; // Call onStatusChange next second!
-		while(!feof($fp) && ($this->position = ftell($fp)) <= $this->end) {
+
+		while(!feof($fp) && $this->position <= $this->end) {
 			if ($this->position + $buffer > $this->end) {
 				// In case we're only outputtin a chunk, make sure we don't
 				// read past the length
 				$buffer = $this->end - $this->position + 1;
 			}
-			echo fread($fp, $buffer);
-			$this->position = ftell($fp);
+			$data = fread($fp, $buffer);
+			echo $data;
+			$this->position += strlen($data);
+			
 			flush(); // PHP: Do not buffer it - send it to browser!
 			@ob_flush();
+
 			if(connection_status()!=CONNECTION_NORMAL) {
 				fclose($fp);
 				$transfer->onConnectionLost($transfer,$this);
