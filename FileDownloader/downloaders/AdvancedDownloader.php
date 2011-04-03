@@ -36,6 +36,10 @@
  * @link       http://filedownloader.projekty.mujserver.net
  */
 
+// TODO: Floating buffer (buffer size changing dynamically by the speed of client)
+// TODO: Add custom priority of download modules
+// TODO: Move from float to strings and use bcmath for computations
+
 /**
  *
  * @link http://filedownloader.projekty.mujserver.net
@@ -63,6 +67,14 @@ class AdvancedDownloader extends BaseDownloader {
 	 * @var BaseFileDownload
 	 */
 	public $currentTransfer;
+
+	protected $buffer;
+
+	/**
+	 * @internal
+	 * @var boolean
+	 */
+	protected $sleep;
 
 	/**
 	 * Download file!
@@ -174,16 +186,29 @@ class AdvancedDownloader extends BaseDownloader {
 			$sleep  = true;
 			$buffer = (int)round($transfer->speedLimit);
 		}
+		$this->sleep = $sleep;
+		
 		if($buffer<1) throw new InvalidArgumentException("Buffer must be bigger than zero!");
-		if($buffer>(FDTools::getAvailableMemory()*0.9)) throw new InvalidArgumentException("Buffer is too big! (bigger than available memory)");
+		if($buffer>(FDTools::getAvailableMemory()-memory_get_usage())) throw new InvalidArgumentException("Buffer is too big! (bigger than available memory)");
+		$this->buffer = $buffer;
+
+
 
 		$fp = fopen($transfer->sourceFile,"rb");
+		// TODO: Add flock() READ
 		if(!$fp) throw new InvalidStateException("Can't open file for reading!");
 		if($this->end===null) $this->end = $filesize-1;
+
 
 		if(fseek($fp, $this->start, SEEK_SET) === -1) { // Move file pointer to the start of the download
 			// Can not move pointer to begining of the filetransfer
 
+			if($this->processByCUrl() === true) {
+				// Request was hadled by curl, clean, exit
+				$this->cleanAfterTransfer();
+				return;
+			}
+			
 			// Use this hack (fread file to start position)
 			$destPos = $this->position = PHP_INT_MAX-1;
 			if(fseek($fp, $this->position, SEEK_SET) === -1) {
@@ -200,10 +225,21 @@ class AdvancedDownloader extends BaseDownloader {
 			$this->position = $this->start;
 		}
 
+		$this->processNative($fp,$sleep);
+		$this->cleanAfterTransfer();
+	}
+
+	protected function cleanAfterTransfer() {
+		$this->currentTransfer->transferredBytes = $this->transferred = $this->length;
+		$this->currentTransfer = null;
+	}
+
+	protected function processNative($fp) {
 		$tmpTime = null;
-		if($sleep===false)
+		if($this->sleep===false)
 			$tmpTime = time()+1; // Call onStatusChange next second!
 
+		$buffer = $this->buffer;
 		while(!feof($fp) && $this->position <= $this->end) {
 			if ($this->position + $buffer > $this->end) {
 				// In case we're only outputtin a chunk, make sure we don't
@@ -213,16 +249,57 @@ class AdvancedDownloader extends BaseDownloader {
 			$data = fread($fp, $buffer);
 			echo $data;
 			$this->position += strlen($data);
+			unset($data);
 
-			$this->_afterBufferSent($sleep, $tmpTime, $fp);
+			$this->_afterBufferSent($tmpTime, $fp);
 		}
 		fclose($fp);
-
-		$transfer->transferredBytes = $this->transferred = $this->length;
-		$this->currentTransfer = null;
 	}
 
-	protected function _afterBufferSent($sleep, $tmpTime, $fp=null) {
+	protected function processByCUrl() {
+		if(function_exists("curl_init")) { // Curl available
+
+			$transfer = $this->currentTransfer;
+
+			$ch = curl_init("file://" . realpath($transfer->sourceFile));
+			$range = $this->start.'-'.$this->end; // HTTP range
+			curl_setopt($ch, CURLOPT_RANGE, $range);
+			curl_setopt($ch, CURLOPT_BINARYTRANSFER, 1);
+			curl_setopt($ch, CURLOPT_BUFFERSIZE, $this->buffer);
+			curl_setopt($ch, CURLOPT_WRITEFUNCTION, array($this,"_curlProcessBlock"));
+			$curlRet = curl_exec($ch);
+			if($curlRet === false) {
+				throw new Exception("cUrl error number ".curl_errno($ch).": ".curl_error($ch));
+			}
+			return true;
+		}else{
+			return false;
+		}
+	}
+
+	/**
+	 * @internal
+	 */
+	public function _curlProcessBlock($ch, $chunk) {
+		static $curl;
+		static $tmpTime;
+
+		if($curl !== $ch) { // Set defaults
+			$tmpTime = null;
+			if($this->sleep===false)
+				$tmpTime = time()+1; // Call onStatusChange next second!
+		}
+
+		echo $chunk;
+		$len = strlen($chunk);
+		$this->position += $len;
+
+		$this->_afterBufferSent($tmpTime);
+
+		return $len;
+	}
+
+	protected function _afterBufferSent($tmpTime, $fp=null) {
 		$transfer = $this->currentTransfer;
 
 		flush(); // PHP: Do not buffer it - send it to browser!
@@ -236,13 +313,13 @@ class AdvancedDownloader extends BaseDownloader {
 			}
 			die();
 		}
-		if($sleep==true OR $tmpTime<=time()) {
+		if($this->sleep==true OR $tmpTime<=time()) {
 			$transfer->transferredBytes = $this->transferred = $this->position-$this->start;
 			$transfer->onStatusChange($transfer,$this);
 			if(IsSet($tmpTime))
 				$tmpTime = time()+1;
 		}
-		if($sleep==true)
+		if($this->sleep==true)
 			sleep(1);
 	}
 

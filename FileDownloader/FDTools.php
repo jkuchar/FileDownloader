@@ -56,7 +56,7 @@ class FDTools extends Object {
 	 * Buffer for FDTools::readfile()
 	 * @var int
 	 */
-	static public $readFileBuffer = 131072; // 128kb
+	static public $readFileBuffer = 524288; // 512kb
 
 	static function getAvailableMemory() {
 		$mem = self::parsePHPIniMemoryValue(ini_get("memory_limit"));
