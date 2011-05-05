@@ -469,7 +469,7 @@ abstract class BaseFileDownload extends Object {
 			$cache["mime-types"] = parse_ini_file(dirname(__FILE__)."\\mime.ini");
 		$mimetypes = $cache["mime-types"];
 
-		$extension = pathinfo($this->transferFileName, PATHINFO_EXTENSION);
+		$extension = pathinfo($this->sourceFile, PATHINFO_EXTENSION);
 		if (array_key_exists($extension, $mimetypes))
 			$mime = $mimetypes[$extension];
 
