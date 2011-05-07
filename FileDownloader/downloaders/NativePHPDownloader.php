@@ -62,7 +62,7 @@ class NativePHPDownloader extends BaseDownloader {
 		flush();
 		
 		if(!readfile($file->sourceFile)) {
-			throw new InvalidStateException("PHP readfile() function fails!");
+			throw new InvalidStateException("PHP readfile() function failed!");
 		}
 
 		// Or use this code? (from http://www.php.net/manual/en/function.readfile.php#50212)
