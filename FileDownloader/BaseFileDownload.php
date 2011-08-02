@@ -456,9 +456,7 @@ abstract class BaseFileDownload extends Object {
 		}
 
 		if(function_exists("mime_content_type")) {
-			$mimeTmp = mime_content_type($this->sourceFile);
-			if(preg_match('/^[a-z\\-]*\\/[a-z\\-]*$/i',$mimeTmp))
-				$mime = $mimeTmp;
+			$mime = mime_content_type($this->sourceFile);
 			if(FDTools::isValidMimeType($mime))
 				return $mime;
 		}

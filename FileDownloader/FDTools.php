@@ -189,7 +189,7 @@ class FDTools extends Object {
 	 */
 	static function isValidMimeType($mime) {
 		$mime = (string) $mime;
-		return preg_match('/^[a-z\\-]*\\/[a-z\\-]*$/i', $mime);
+		return preg_match('#^[-\w]+/[-\w\+]+$#i', $mime); // Thanks to Matúš Matula: http://forum.nette.org/cs/1952-addon-file-downloader-file-downloader?p=2#p61785
 	}
 
 	/**
