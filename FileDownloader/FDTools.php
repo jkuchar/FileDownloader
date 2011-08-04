@@ -189,7 +189,13 @@ class FDTools extends Object {
 	 */
 	static function isValidMimeType($mime) {
 		$mime = (string) $mime;
-		return preg_match('#^[-\w]+/[-\w\+]+$#i', $mime); // Thanks to Matúš Matula: http://forum.nette.org/cs/1952-addon-file-downloader-file-downloader?p=2#p61785
+		// Thanks to Matúš Matula: http://forum.nette.org/cs/1952-addon-file-downloader-file-downloader?p=2#p61785
+		// return preg_match('#^[-\w]+/[-\w\+]+$#i', $mime); // simple check
+		
+		// Thanks to voda http://forum.nette.org/cs/1952-addon-file-downloader-file-downloader?p=2#p61794
+		// @see http://tools.ietf.org/html/rfc4288#section-4.2
+		$regName = '[a-z0-9!#$&.+^_-]{1,127}';
+		return preg_match("|^$regName/$regName$|i", $mime);
 	}
 
 	/**
