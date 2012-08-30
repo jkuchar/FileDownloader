@@ -45,7 +45,7 @@
  * @author      Jan Kuchař
  * @version     $Id$
  */
-abstract class BaseDownloader extends Object implements IDownloader {
+abstract class BaseDownloader extends Nette\Object implements IDownloader {
 
 	/**
 	 * Sends a standard headers for file download
@@ -53,8 +53,8 @@ abstract class BaseDownloader extends Object implements IDownloader {
 	 * @param BaseDownloader $downloader    Downloader of the file
 	 */
 	protected function sendStandardFileHeaders(BaseFileDownload $file, BaseDownloader $downloader=null) {
-		$res = Environment::getHttpResponse();
-		$req = Environment::getHttpRequest();
+		$res = \Nette\Environment::getHttpResponse();
+		$req = \Nette\Environment::getHttpRequest();
 		//FDTools::clearHeaders($res); // Voláno už v FileDownload.php
 
 		$res->setContentType($file->mimeType, "UTF-8");

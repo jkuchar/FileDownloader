@@ -86,8 +86,8 @@ class AdvancedDownloader extends BaseDownloader {
 
 		@ignore_user_abort(true); // For onAbort event
 
-		$req = Environment::getHttpRequest();
-		$res = Environment::getHttpResponse();
+		$req = \Nette\Environment::getHttpRequest();
+		$res = \Nette\Environment::getHttpResponse();
 
 		$filesize = $this->size   = $transfer->sourceFileSize;
 		$this->length = $this->size; // Content-length
@@ -107,7 +107,7 @@ class AdvancedDownloader extends BaseDownloader {
 		 * Multirange content must be sent with multipart/byteranges mediatype,
 		 * (mediatype = mimetype)
 		 * as well as a boundry header to indicate the various chunks of data.
-		*/
+		 */
 
 		//$res->setHeader("Accept-Ranges", "0-".$this->end); // single-part - now not accepted by mozilla
 		$res->setHeader("Accept-Ranges", "bytes"); // multi-part (through Mozilla)
@@ -188,15 +188,15 @@ class AdvancedDownloader extends BaseDownloader {
 		}
 		$this->sleep = $sleep;
 		
-		if($buffer<1) throw new InvalidArgumentException("Buffer must be bigger than zero!");
-		if($buffer>(FDTools::getAvailableMemory()-memory_get_usage())) throw new InvalidArgumentException("Buffer is too big! (bigger than available memory)");
+		if($buffer<1) throw new Nette\InvalidArgumentException("Buffer must be bigger than zero!");
+		if($buffer>(FDTools::getAvailableMemory()-memory_get_usage())) throw new Nette\InvalidArgumentException("Buffer is too big! (bigger than available memory)");
 		$this->buffer = $buffer;
 
 
 
 		$fp = fopen($transfer->sourceFile,"rb");
 		// TODO: Add flock() READ
-		if(!$fp) throw new InvalidStateException("Can't open file for reading!");
+		if(!$fp) throw new \Nette\InvalidStateException("Can't open file for reading!");
 		if($this->end===null) $this->end = $filesize-1;
 
 
@@ -302,26 +302,26 @@ class AdvancedDownloader extends BaseDownloader {
 	protected function _afterBufferSent($tmpTime, $fp=null) {
 		$transfer = $this->currentTransfer;
 
-		flush(); // PHP: Do not buffer it - send it to browser!
-		@ob_flush();
+			flush(); // PHP: Do not buffer it - send it to browser!
+			@ob_flush();
 
-		if(connection_status()!=CONNECTION_NORMAL) {
+			if(connection_status()!=CONNECTION_NORMAL) {
 			if($fp) fclose($fp);
-			$transfer->onConnectionLost($transfer,$this);
-			if(connection_aborted()) {
-				$transfer->onAbort($transfer,$this);
+				$transfer->onConnectionLost($transfer,$this);
+				if(connection_aborted()) {
+					$transfer->onAbort($transfer,$this);
+				}
+				die();
 			}
-			die();
-		}
 		if($this->sleep==true OR $tmpTime<=time()) {
-			$transfer->transferredBytes = $this->transferred = $this->position-$this->start;
-			$transfer->onStatusChange($transfer,$this);
-			if(IsSet($tmpTime))
-				$tmpTime = time()+1;
-		}
+				$transfer->transferredBytes = $this->transferred = $this->position-$this->start;
+				$transfer->onStatusChange($transfer,$this);
+				if(IsSet($tmpTime))
+					$tmpTime = time()+1;
+			}
 		if($this->sleep==true)
-			sleep(1);
-	}
+				sleep(1);
+		}
 
 	/**
 	 * Is this downloader initialized?

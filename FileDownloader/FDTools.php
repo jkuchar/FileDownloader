@@ -45,8 +45,8 @@
  * @author      Jan Kuchař
  * @version     $Id$
  */
-class FDTools extends Object {
-	const BYTE = 1;
+class FDTools extends Nette\Object {
+	const BYTE  = 1;
 	const KILOBYTE = 1024;
 	const MEGABYTE = 1048576;
 	const GYGABYTE = 1073741824;
@@ -62,7 +62,7 @@ class FDTools extends Object {
 		$mem = self::parsePHPIniMemoryValue(ini_get("memory_limit"));
 		if ($mem == 0)
 			return null;
-		return $mem - memory_get_usage();
+		return $mem-memory_get_usage();
 	}
 
 	/**
@@ -71,7 +71,7 @@ class FDTools extends Object {
 	 * @return int
 	 */
 	static function parsePHPIniMemoryValue($phpIniValueStr) {
-		$phpIniValueInt = (int) $phpIniValueStr;
+		$phpIniValueInt = (int)$phpIniValueStr;
 		if ($phpIniValueInt == 0)
 			return 0;
 		switch (substr($phpIniValueStr, -1, 1)) {
@@ -89,19 +89,19 @@ class FDTools extends Object {
 				$phpIniValueInt *= self::TERABYTE;
 				break;
 			default:
-				throw new InvalidStateException("Can't parse php ini value!");
+				throw new \Nette\InvalidStateException("Can't parse php ini value!");
 		}
 		return $phpIniValueInt;
 	}
 
 	/**
 	 * Clears all http headers
-	 * @param IHTTPResponse $res
-	 * @return IHTTPResponse
+	 * @param \Nette\Http\IResponse $res
+	 * @return \Nette\Http\IResponse
 	 */
-	static function clearHeaders(IHTTPResponse $res, $setContentType=false) {
-		$res->setCode(IHTTPResponse::S200_OK);
-		foreach ($res->getHeaders() AS $key => $val) {
+	static function clearHeaders(\Nette\Http\IResponse $res,$setContentType=false) {
+		$res->setCode(\Nette\Http\IResponse::S200_OK);
+		foreach($res->getHeaders() AS $key => $val) {
 			$res->setHeader($key, null);
 		}
 		if ($setContentType === true)
@@ -115,18 +115,18 @@ class FDTools extends Object {
 	 * @return bool
 	 */
 	static function setTimeLimit($time=0) {
-		if (!function_exists("ini_get"))
-			throw new InvalidStateException("Function ini_get must be allowed.");
+		if(!function_exists("ini_get"))
+			throw new \Nette\InvalidStateException("Function ini_get must be allowed.");
 
-		if ((int) @ini_get("max_execution_time") === $time)
+		if((int)@ini_get("max_execution_time") === $time)
 			return true;
 
-		if (function_exists("set_time_limit"))
+		if(function_exists("set_time_limit"))
 			@set_time_limit($time);
-		elseif (function_exists("ini_set"))
+		elseif(function_exists("ini_set"))
 			@ini_set("max_execution_time", $time);
 
-		if ((int) @ini_get("max_execution_time") === $time)
+		if((int)@ini_get("max_execution_time") === $time)
 			return true;
 
 		return false;
@@ -152,7 +152,7 @@ class FDTools extends Object {
 	 */
 	static function getContentDispositionHeaderData($basename) {
 		$basename = basename($basename);
-		$req = Environment::getHttpRequest();
+		$req = \Nette\Environment::getHttpRequest();
 		$userAgent = $req->getHeader("User-Agent");
 		if ($userAgent AND strstr($userAgent, "MSIE")) {
 			// workaround for IE filename bug with multiple periods / multiple dots in filename
@@ -170,16 +170,16 @@ class FDTools extends Object {
 	 * @param int $code       HTTP code
 	 * @param string $message HTTP status
 	 */
-	static function _HTTPError($code, $message=null) {
+	static function _HTTPError($code,$message=null) {
 		$errors = array(
-		    416 => "Requested Range not satisfiable"
+			416=>"Requested Range not satisfiable"
 		);
-		if ($message === null and isset($errors[$code]))
+		if($message===null and isset($errors[$code]))
 			$message = $errors[$code];
-		$res = Environment::getHttpResponse();
+		$res = \Nette\Environment::getHttpResponse();
 		$res->setCode($code);
-		$res->setContentType("plain/text", "UTF-8");
-		die("<html><body><h1>HTTP Error " . $code . " - " . $message . "</h1><p>" . $message . "</p></body></html>");
+		$res->setContentType("plain/text","UTF-8");
+		die("<html><body><h1>HTTP Error ".$code." - ".$message."</h1><p>".$message."</p></body></html>");
 	}
 
 	/**
@@ -188,7 +188,7 @@ class FDTools extends Object {
 	 * @return bool
 	 */
 	static function isValidMimeType($mime) {
-		$mime = (string) $mime;
+		$mime = (string)$mime;
 		// Thanks to Matúš Matula: http://forum.nette.org/cs/1952-addon-file-downloader-file-downloader?p=2#p61785
 		// return preg_match('#^[-\w]+/[-\w\+]+$#i', $mime); // simple check
 		
@@ -217,25 +217,25 @@ class FDTools extends Object {
 	 * @param bool $speedLimit      Bytes per second - zero is unlimited
 	 * @param int $buffer           Buffer size in bytes
 	 */
-	public static function readFile($location, $start=0, $end=null, $speedLimit=0) {
+	public static function readFile($location,$start=0,$end=null,$speedLimit=0) {
 		$buffer = self::$readFileBuffer;
 		$sleep = false;
-		if (is_int($speedLimit) and $speedLimit > 0) {
-			$sleep = true;
-			$buffer = (int) round($speedLimit);
+		if(is_int($speedLimit) and $speedLimit>0) {
+			$sleep  = true;
+			$buffer = (int)round($speedLimit);
 		}
-		if ($buffer < 1)
-			throw new InvalidArgumentException("Buffer must be bigger than zero!");
-		if ($buffer > (self::getAvailableMemory() * 0.9))
-			throw new InvalidArgumentException("Buffer is too big! (bigger than available memory)");
+		if($buffer<1)
+			throw new Nette\InvalidArgumentException("Buffer must be bigger than zero!");
+		if($buffer>(self::getAvailableMemory()*0.9))
+			throw new Nette\InvalidArgumentException("Buffer is too big! (bigger than available memory)");
 
-		$fp = fopen($location, "rb");
-		if (!$fp)
-			throw new InvalidStateException("Can't open file for reading!");
-		if ($end === null)
+		$fp = fopen($location,"rb");
+		if(!$fp)
+			throw new \Nette\InvalidStateException("Can't open file for reading!");
+		if($end===null)
 			$end = self::filesize($location);
 		fseek($fp, $start); // Move file pointer to the start of the download
-		while (!feof($fp) && ($p = ftell($fp)) <= $end) {
+		while(!feof($fp) && ($p = ftell($fp)) <= $end) {
 			if ($p + $buffer > $end) {
 				// In case we're only outputtin a chunk, make sure we don't
 				// read past the length

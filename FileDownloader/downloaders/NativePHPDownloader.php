@@ -60,10 +60,9 @@ class NativePHPDownloader extends BaseDownloader {
 		// @see http://www.php.net/manual/en/function.readfile.php#81032
 		while (@ob_end_flush()); // @see example at http://php.net/manual/en/function.ob-end-flush.php
 		flush();
-		
-		if(!readfile($file->sourceFile)) {
-			throw new InvalidStateException("PHP readfile() function failed!");
-		}
+
+		if(!@readfile($file->sourceFile)) {
+			throw new \Nette\InvalidStateException("PHP readfile() function fails!");		}
 
 		// Or use this code? (from http://www.php.net/manual/en/function.readfile.php#50212)
 		//

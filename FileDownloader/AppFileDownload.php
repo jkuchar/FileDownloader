@@ -47,7 +47,7 @@
  *
  * @property Component $parent Parent component
  */
-class AppFileDownload extends BaseFileDownload implements IPresenterResponse {
+class AppFileDownload extends BaseFileDownload implements \Nette\Application\IResponse {
 	/**
 	 * Parent of this object
 	 * @var Component
@@ -62,7 +62,7 @@ class AppFileDownload extends BaseFileDownload implements IPresenterResponse {
 
 	/**
 	 * Getts new instance of self
-	 * @param Component $parent
+	 * @param Nette\ComponentModel\Component $parent
 	 * @return AppFileDownload
 	 */
 	public static function getInstance(Component $parent) {
@@ -70,26 +70,26 @@ class AppFileDownload extends BaseFileDownload implements IPresenterResponse {
 	}
 
 	/**
-	 * @param Component $parent
+	 * @param Nette\ComponentModel\Component $parent
 	 */
-	function  __construct(Component $parent) {
+	function  __construct(Nette\ComponentModel\Component $parent) {
 		parent::__construct();
 		$this->setParent($parent);
 	}
 
 	/**
 	 * Setts AppFileDownload parent
-	 * @param Component $parent
+	 * @param Nette\ComponentModel\Component $parent
 	 * @return AppFileDownload
 	 */
-	function setParent(Component $parent) {
+	function setParent(Nette\ComponentModel\Component $parent) {
 		$this->parent = $parent;
 		return $this;
 	}
 
 	/**
 	 * Getts AppFileDownload parent
-	 * @return Component
+	 * @return Nette\ComponentModel\Component
 	 */
 	function getParent() {
 		return $this->parent;
@@ -98,7 +98,7 @@ class AppFileDownload extends BaseFileDownload implements IPresenterResponse {
 	/**
 	 * Implementation of IPresenterResponse::send()
 	 */
-	function send() {
+	function send(Nette\Http\IRequest $httpRequest, Nette\Http\IResponse $httpResponse) {
 		parent::download($this->downloader);
 	}
 
@@ -110,10 +110,10 @@ class AppFileDownload extends BaseFileDownload implements IPresenterResponse {
 		$this->downloader = $downloader;
 
 		// Call terminate on presenter
-		if($this->parent instanceof Presenter) {
+		if($this->parent instanceof Nette\Application\UI\Presenter) {
 			$presenter = $this->parent;
 		} else {
-			$presenter = $this->parent->lookup("Nette/Application/Presenter",true);
+			$presenter = $this->parent->lookup("Nette/Application/UI/Presenter",true);
 		}
 
 		$presenter->terminate($this);
