@@ -80,7 +80,7 @@ abstract class BaseDownloader extends Nette\Object implements IDownloader {
 	}
 
 	protected function setupCacheHeaders(BaseFileDownload $file) {
-		$res = Environment::getHttpResponse();
+		$res = \Nette\Environment::getHttpResponse();
 		$res->setExpiration(time() + 99999999);
 		$res->setHeader('Last-Modified', "Mon, 23 Jan 1978 10:00:00 GMT");
 		if (!empty($_SERVER["HTTP_IF_MODIFIED_SINCE"])) {
@@ -91,7 +91,7 @@ abstract class BaseDownloader extends Nette\Object implements IDownloader {
 	}
 
 	protected function setupNonCacheHeaders(BaseFileDownload $file) {
-		$res = Environment::getHttpResponse();
+		$res = \Nette\Environment::getHttpResponse();
 		$res->setHeader('Expires', '0');
 		$res->setHeader('Cache-Control', 'must-revalidate, post-check=0, pre-check=0');
 	}

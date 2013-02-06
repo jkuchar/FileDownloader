@@ -8,36 +8,37 @@
  */
 
 
-
 // Step 1: Load Nette Framework
 // this allows load Nette Framework classes automatically so that
 // you don't have to litter your code with 'require' statements
-require LIBS_DIR . '/Nette/loader.php';
-
+require LIBS_DIR . '/nette/loader.php';
 
 
 // Step 2: Configure environment
 // 2a) enable Nette\Debug for better exception and error visualisation
-Debug::enable();
+\Nette\Diagnostics\Debugger::enable(\Nette\Diagnostics\Debugger::DEVELOPMENT, APP_DIR."/log");
 
 // 2b) load configuration from config.ini file
-Environment::loadConfig();
+//Nette\Environment::loadConfig();
 
 
 
 // Step 3: Configure application
 // 3a) get and setup a front controller
-$application = Environment::getApplication();
+$application = Nette\Environment::getApplication();
 $application->errorPresenter = 'Error';
 //$application->catchExceptions = TRUE;
 
 
-$loader = new RobotLoader();
+$loader = new \Nette\Loaders\RobotLoader();
+$loader->setCacheStorage(Nette\Environment::getContext()->cacheStorage);
 $loader->addDirectory(APP_DIR);
 $loader->addDirectory(LIBS_DIR);
 $loader->addDirectory(LIBS_DIR."/../FileDownloader");
 $loader->register();
 
+
+use \Nette\Application\Routers\Route;
 
 // Step 4: Setup application router
 $router = $application->getRouter();

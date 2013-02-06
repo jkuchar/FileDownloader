@@ -1,8 +1,8 @@
 <?php
 
 
-Environment::getHttpResponse()->setHeader("refresh", "1");
-$cache = Environment::getCache("FileDownloader/log");
+\Nette\Environment::getHttpResponse()->setHeader("refresh", "1");
+$cache = Nette\Environment::getCache("FileDownloader/log");
 echo "<html><body>";
 echo "<h1>Log console (called events)</h1>";
 echo "<p>Clear log = delete temp files</p>";

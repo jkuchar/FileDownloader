@@ -11,7 +11,7 @@ Options -Indexes
 # mod_rewrite
 <IfModule mod_rewrite.c>
 	RewriteEngine On
-	# RewriteBase /
+	#RewriteBase /
 
 	# front controller
 	RewriteCond %{REQUEST_FILENAME} !-f

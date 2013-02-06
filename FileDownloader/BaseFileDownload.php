@@ -323,7 +323,7 @@ abstract class BaseFileDownload extends Nette\Object {
 	 * @param callback $callback    Callback
 	 * @return BaseFileDownload
 	 */
-	private function addCallback($fceName,$callback) {
+	private function addCallback($fceName, $callback) {
 		preg_match("/^.*::add(.*)Callback$/", $fceName, $matches);
 		$varName = "on".$matches[1];
 		$var = &$this->$varName;
@@ -418,8 +418,8 @@ abstract class BaseFileDownload extends Nette\Object {
 	 * @return BaseFileDownload
 	 */
 	function setSpeedLimit($speed) {
-		if(!is_int($speed)) throw new Nette\InvalidArgumentException("Max download speed must be intiger!");
-		if($speed<0) throw new Nette\InvalidArgumentException("Max download speed can't be smaller than zero!");
+		if(!is_int($speed)) throw new \Nette\InvalidArgumentException("Max download speed must be intiger!");
+		if($speed<0) throw new \Nette\InvalidArgumentException("Max download speed can't be smaller than zero!");
 		$availableMem = FDTools::getAvailableMemory();
 		$availableMemWithReserve = ($availableMem-100*1024);
 		if($availableMem !== null AND $speed>$availableMemWithReserve) throw new Nette\InvalidArgumentException("Max download speed can't be a bigger than available memory ".$availableMemWithReserve."b!");

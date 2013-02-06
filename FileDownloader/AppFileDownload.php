@@ -65,7 +65,7 @@ class AppFileDownload extends BaseFileDownload implements \Nette\Application\IRe
 	 * @param Nette\ComponentModel\Component $parent
 	 * @return AppFileDownload
 	 */
-	public static function getInstance(Component $parent) {
+	public static function getInstance(Nette\ComponentModel\Component $parent) {
 		return new AppFileDownload($parent);
 	}
 

@@ -1,5 +1,7 @@
 <?php
 
+use Nette\Templating\Helpers;
+
 /**
  * Generates random file
  * @param string $location
@@ -18,7 +20,7 @@ function generateFile($location,$size) {
 }
 
 function log_write($data,FileDownload $file,IDownloader $downloader) {
-	$cache = Environment::getCache("FileDownloader/log");
+	$cache = Nette\Environment::getCache("FileDownloader/log");
 	$log = array();
 	$tid = (string)$file->getTransferId();
 	if(!IsSet($cache["registry"])) $cache["registry"] = array();
@@ -27,13 +29,15 @@ function log_write($data,FileDownload $file,IDownloader $downloader) {
 	$cache["registry"] = $reg;
 	if(IsSet($cache[$tid])) $log = $cache[$tid];
 
-	Debug::fireLog("Data: ".$data."; ".$downloader->end);
+	\Nette\Diagnostics\Debugger::fireLog("Data: ".$data."; ".$downloader->end);
 
-	$data = $data.": ".TemplateHelpers::bytes($file->transferredBytes)." <->; ";
+	
+	
+	$data = $data.": ".Helpers::bytes($file->transferredBytes)." <->; ";
 	if($downloader instanceof AdvancedDownloader and $downloader->isInitialized()) {
-		$data .= "position: ".TemplateHelpers::bytes($downloader->position)."; ";
-		//$data .= "length: ".TemplateHelpers::bytes($downloader->length)."; ";
-		$data .= "http-range: ".TemplateHelpers::bytes($downloader->start)."-".TemplateHelpers::bytes($downloader->end)."; ";
+		$data .= "position: ".Helpers::bytes($downloader->position)."; ";
+		//$data .= "length: ".Helpers::bytes($downloader->length)."; ";
+		$data .= "http-range: ".Helpers::bytes($downloader->start)."-".Helpers::bytes($downloader->end)."; ";
 		$data .= "progress (con: ".round($file->transferredBytes/$downloader->end*100)."% X ";
 		$data .= "file: ".round($downloader->position/$file->sourceFileSize*100)."%)";
 	}

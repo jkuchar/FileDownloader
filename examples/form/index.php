@@ -46,31 +46,34 @@ require_once "example_library.php";
 if(IsSet($_GET["logConsole"]))
 	require "logConsole.php";
 
+use Nette\Environment;
+use Nette\Forms\Form;
+
 // Generate form
-$f = new Form;
+$f = new Form("upload-form");
 $f->getElementPrototype()->id = "frm";
 $f->setMethod("GET");
 $f->addSelect("speed", "Speed",array(
-	1=>"1byte/s",
-	50=>"50bytes/s",
-	512=>"512bytes/s",
-	1*FDTools::KILOBYTE=>"1kb/s",
-	5*FDTools::KILOBYTE=>"5kb/s",
-	20*FDTools::KILOBYTE=>"20kb/s",
-	32*FDTools::KILOBYTE=>"32kb/s",
-	50*FDTools::KILOBYTE=>"50kb/s",
-	64*FDTools::KILOBYTE=>"64kb/s",
-	100*FDTools::KILOBYTE=>"100kb/s",
-	128*FDTools::KILOBYTE=>"128kb/s",
-	200*FDTools::KILOBYTE=>"200kb/s",
-	256*FDTools::KILOBYTE=>"256kb/s",
-	300*FDTools::KILOBYTE=>"300kb/s",
-	512*FDTools::KILOBYTE=>"512kb/s",
-	1*FDTools::MEGABYTE=>"1mb/s",
-	2*FDTools::MEGABYTE=>"2mb/s",
-	5*FDTools::MEGABYTE=>"5mb/s",
-	10*FDTools::MEGABYTE=>"10mb/s",
-	0=>"Unlimited"
+	1                     =>"1byte/s", 
+	50                    =>"50bytes/s",
+	512                   =>"512bytes/s",
+	1*FDTools::KILOBYTE   =>"1kb/s",
+	5*FDTools::KILOBYTE   =>"5kb/s",
+	20*FDTools::KILOBYTE  =>"20kb/s",
+	32*FDTools::KILOBYTE  =>"32kb/s",
+	50*FDTools::KILOBYTE  =>"50kb/s",
+	64*FDTools::KILOBYTE  =>"64kb/s",
+	100*FDTools::KILOBYTE =>"100kb/s",
+	128*FDTools::KILOBYTE =>"128kb/s",
+	200*FDTools::KILOBYTE =>"200kb/s",
+	256*FDTools::KILOBYTE =>"256kb/s",
+	300*FDTools::KILOBYTE =>"300kb/s",
+	512*FDTools::KILOBYTE =>"512kb/s",
+	1*FDTools::MEGABYTE   =>"1mb/s",
+	2*FDTools::MEGABYTE   =>"2mb/s",
+	5*FDTools::MEGABYTE   =>"5mb/s",
+	10*FDTools::MEGABYTE  =>"10mb/s",
+	0                     =>"Unlimited"
 ));
 
 $f->addText("filename", "Filename")
@@ -103,9 +106,9 @@ $f->setDefaults(array(
 ));
 
 if($f->isSubmitted() and $f->isValid()) {
-	Debug::enable(Debug::PRODUCTION); // Log errors to file!
+	\Nette\Diagnostics\Debugger::enable(\Nette\Diagnostics\Debugger::PRODUCTION); // Log errors to file!
 	$val = $f->getValues();
-	$location = dirname(__FILE__)."/temp/test-".$val["size"]."MB.tmp";
+	$location = dirname(__FILE__)."/cache/test-".$val["size"]."MB.tmp";
 	if(!file_exists($location)) generateFile($location, $val["size"]*1024);
 
 	/* Interface with getters and setters */

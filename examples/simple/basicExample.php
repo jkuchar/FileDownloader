@@ -38,7 +38,7 @@
  */
 
 
-define("APP_DIR",dirname(__FILE__));
+define("APP_DIR", dirname(__FILE__));
 require_once "../load.php"; // Loads nette
 
 FileDownload::getInstance()

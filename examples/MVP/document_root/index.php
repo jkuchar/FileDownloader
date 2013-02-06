@@ -6,6 +6,8 @@ define('WWW_DIR', dirname(__FILE__));
 // absolute filesystem path to the application root
 define('APP_DIR', WWW_DIR . '/../app');
 
+define('TEMP_DIR', APP_DIR . '/cache');
+
 // absolute filesystem path to the libraries
 define('LIBS_DIR', WWW_DIR . '/../../../libs');
 
