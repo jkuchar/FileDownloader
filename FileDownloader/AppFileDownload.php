@@ -116,7 +116,7 @@ class AppFileDownload extends BaseFileDownload implements \Nette\Application\IRe
 			$presenter = $this->parent->lookup("Nette/Application/UI/Presenter",true);
 		}
 
-		$presenter->terminate($this);
+		$presenter->sendResponse($this);
 
 	}
 }
