@@ -109,14 +109,14 @@ class AppFileDownload extends BaseFileDownload implements \Nette\Application\IRe
 	function download(IDownloader $downloader = null) {
 		$this->downloader = $downloader;
 
-		// Call terminate on presenter
+		// Call sendResponse on presenter (used since 2.0 instead of terminate)
 		if($this->parent instanceof Nette\Application\UI\Presenter) {
 			$presenter = $this->parent;
 		} else {
 			$presenter = $this->parent->lookup("Nette/Application/UI/Presenter",true);
 		}
 
-		$presenter->terminate($this);
+		$presenter->sendResponse($this);
 
 	}
 }
