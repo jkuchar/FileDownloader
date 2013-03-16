@@ -31,15 +31,15 @@ class DownloadPresenter extends BasePresenter {
 			->download();
 	}
 
-	function handleDownloadClassicTerminate() {
+	function handleDownloadClassicSendResponse() {
 		$fileDownload = new AppFileDownload($this);
 		$fileDownload->sourceFile = __FILE__;
 		$fileDownload->speedLimit = 5*FDTools::KILOBYTE;
-		$this->terminate($fileDownload);
+		$this->sendResponse($fileDownload);
 	}
 
-	function handleDownloadFluentTerminate() {
-		$this->terminate(
+	function handleDownloadFluentSendResponse() {
+		$this->sendResponse(
 			AppFileDownload::getInstance($this)
 			->setSourceFile(__FILE__)
 			->setSpeedLimit(5*FDTools::KILOBYTE)
