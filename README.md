@@ -6,3 +6,8 @@ Allows you to send files to browser from Presenter. (also can be used without Ne
 Full documentation is here:
 - Czech: http://addons.nette.org/cs/file-downloader
 - English: http://addons.nette.org/en/file-downloader (machine translation)
+
+Requirements
+------------
+(currently not managed by Composer)
+- You have to download BigFileTools: https://github.com/jkuchar/BigFileTools
