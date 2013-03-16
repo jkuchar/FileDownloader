@@ -17,7 +17,7 @@ successfully installed and ready to use.
 Application Structure on the File System
 ----------------------------------------
 
-Make directories 'app/temp' and 'app/log' writable.
+Make directories 'app/cache' and 'app/log' writable.
 
 
 Bootstrapping
