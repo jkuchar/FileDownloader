@@ -34,7 +34,7 @@ use FileDownloader\FileDownload;
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @author     Jan Kuchař
- * @copyright  Copyright (c) 2009 Jan Kuchař (http://mujserver.net)
+ * @copyright  Copyright (c) 2014 Jan Kuchar (http://mujserver.net)
  * @license    New BSD License
  * @link       http://filedownloader.projekty.mujserver.net
  */
@@ -46,7 +46,7 @@ namespace FileDownloader;
  * @link http://filedownloader.projekty.mujserver.net
  *
  * @author      Jan Kuchař
- * @copyright   Copyright (c) 2009 Jan Kuchař
+ * @copyright   Copyright (c) 2014 Jan Kuchar
  * @author      Jan Kuchař
  */
 interface IDownloader {
