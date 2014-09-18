@@ -1,5 +1,8 @@
 <?php
 
+use FileDownloader\BaseFileDownload;
+use FileDownloader\FileDownload;
+
 /**
  * Copyright (c) 2009, Jan Kuchař
  * All rights reserved.
@@ -45,7 +48,6 @@ namespace FileDownloader;
  * @author      Jan Kuchař
  * @copyright   Copyright (c) 2009 Jan Kuchař
  * @author      Jan Kuchař
- * @version     $Id$
  */
 interface IDownloader {
 	/**

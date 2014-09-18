@@ -57,7 +57,6 @@ namespace FileDownloader;
  * @author      Jan Kuchař
  * @copyright   Copyright (c) 2009 Jan Kuchař
  * @author      Jan Kuchař
- * @version     $Id$
  *
  * @property string $sourceFile         Source file path
  * @property string $transferFileName   File name witch will be used for transfer

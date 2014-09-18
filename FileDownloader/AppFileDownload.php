@@ -45,7 +45,6 @@ namespace FileDownloader;
  * @author      Jan Kuchař
  * @copyright   Copyright (c) 2009 Jan Kuchař
  * @author      Jan Kuchař
- * @version     $Id$
  *
  * @property Component $parent Parent component
  */

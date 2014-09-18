@@ -45,7 +45,6 @@ namespace FileDownloader\Downloader;
  * @author      Jan Kuchař
  * @copyright   Copyright (c) 2009 Jan Kuchař
  * @author      Jan Kuchař
- * @version     $Id$
  */
 abstract class BaseDownloader extends Nette\Object implements IDownloader {
 
