@@ -8,6 +8,14 @@ Addon makes controlled downloads of files peace of cake. It supports **client re
 - [Demo](http://filedownloader.projekty.mujserver.net/demo/)
 
 
+Installation
+------------
+
+Install this addon just by calling:
+	`composer require jkuchar/filedownloader`
+
+Or to install example, continue to [example repository](https://github.com/jkuchar/FileDownloader-example). (one command set-up)
+
 
 ## Basic usage: Just want to download file ##
 
