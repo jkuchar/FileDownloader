@@ -169,10 +169,12 @@ class AdvancedDownloader extends BaseDownloader {
 				$this->end    = $range_end;
 				$this->length = $this->end - $this->start + 1; // Calculate new content length
 			} catch (FileDownloaderException $e) {
-				if($e->getCode() == 416) {
+				if ($e->getCode() === 416) {
 					$res->setHeader("Content-Range", "bytes $this->start-$this->end/$this->size");
 					FDTools::_HTTPError(416);
-				}else throw $e;
+				} else {
+					throw $e;
+				}
 			}
 			$res->setCode(206); // Partial content
 		} // End of if partial download
@@ -184,8 +186,11 @@ class AdvancedDownloader extends BaseDownloader {
 		/* ### Call callbacks ### */
 
 		$transfer->onBeforeOutputStarts($transfer,$this);
-		if($this->start > 0) $transfer->onTransferContinue($transfer,$this);
-		else $transfer->onNewTransferStart($transfer,$this);
+		if ($this->start > 0) {
+			$transfer->onTransferContinue($transfer, $this);
+		} else {
+			$transfer->onNewTransferStart($transfer, $this);
+		}
 
 		/* ### Send file to browser - document body ### */
 
@@ -197,16 +202,24 @@ class AdvancedDownloader extends BaseDownloader {
 		}
 		$this->sleep = $sleep;
 		
-		if($buffer<1) throw new Nette\InvalidArgumentException("Buffer must be bigger than zero!");
-		if($buffer>(FDTools::getAvailableMemory()-memory_get_usage())) throw new Nette\InvalidArgumentException("Buffer is too big! (bigger than available memory)");
+		if ($buffer < 1) {
+			throw new InvalidArgumentException("Buffer must be bigger than zero!");
+		}
+		if ($buffer > (FDTools::getAvailableMemory() - memory_get_usage())) {
+			throw new InvalidArgumentException("Buffer is too big! (bigger than available memory)");
+		}
 		$this->buffer = $buffer;
 
 
 
 		$fp = fopen($transfer->sourceFile,"rb");
 		// TODO: Add flock() READ
-		if(!$fp) throw new InvalidStateException open file for reading!");
-		if($this->end===null) $this->end = $filesize-1;
+		if (!$fp) {
+			throw new InvalidStateException("Can't open file for reading!");
+		}
+		if ($this->end === null) {
+			$this->end = $filesize - 1;
+		}
 
 
 		if(fseek($fp, $this->start, SEEK_SET) === -1) { // Move file pointer to the start of the download
@@ -245,8 +258,10 @@ class AdvancedDownloader extends BaseDownloader {
 
 	protected function processNative($fp) {
 		$tmpTime = null;
-		if($this->sleep===false)
-			$tmpTime = time()+1; // Call onStatusChange next second!
+		if ($this->sleep === false) {
+			// Call onStatusChange next second!
+			$tmpTime = time() + 1;
+		} 
 
 		$buffer = $this->buffer;
 		while(!feof($fp) && $this->position <= $this->end) {
@@ -295,8 +310,10 @@ class AdvancedDownloader extends BaseDownloader {
 
 		if($curl !== $ch) { // Set defaults
 			$tmpTime = null;
-			if($this->sleep===false)
-				$tmpTime = time()+1; // Call onStatusChange next second!
+			if ($this->sleep === false) {
+				 // Call onStatusChange next second!
+				$tmpTime = time() + 1;
+			}
 		}
 
 		echo $chunk;
@@ -311,34 +328,39 @@ class AdvancedDownloader extends BaseDownloader {
 	protected function _afterBufferSent($tmpTime, $fp=null) {
 		$transfer = $this->currentTransfer;
 
-			flush(); // PHP: Do not buffer it - send it to browser!
-			@ob_flush();
+		flush(); // PHP: Do not buffer it - send it to browser!
+		@ob_flush();
 
-			if(connection_status()!=CONNECTION_NORMAL) {
-			if($fp) fclose($fp);
-				$transfer->onConnectionLost($transfer,$this);
-				if(connection_aborted()) {
-					$transfer->onAbort($transfer,$this);
-				}
-				die();
+		if(connection_status()!=CONNECTION_NORMAL) {
+			if ($fp) {
+				fclose($fp);
 			}
-		if($this->sleep==true OR $tmpTime<=time()) {
-				$transfer->transferredBytes = $this->transferred = $this->position-$this->start;
-				$transfer->onStatusChange($transfer,$this);
-				if(IsSet($tmpTime))
-					$tmpTime = time()+1;
+			$transfer->onConnectionLost($transfer,$this);
+			if(connection_aborted()) {
+				$transfer->onAbort($transfer,$this);
 			}
-		if($this->sleep==true)
-				sleep(1);
+			die();
 		}
+		if($this->sleep==true OR $tmpTime<=time()) {
+			$transfer->transferredBytes = $this->transferred = $this->position-$this->start;
+			$transfer->onStatusChange($transfer,$this);
+			if (IsSet($tmpTime)) {
+				$tmpTime = time() + 1;
+			}
+		}
+		if ($this->sleep == true) {
+			sleep(1);
+		}
+	}
 
 	/**
 	 * Is this downloader initialized?
 	 * @return bool
 	 */
 	function isInitialized() {
-		if($this->end == 0)
+		if ($this->end == 0) {
 			return false;
+		}
 		return true;
 	}
 
@@ -350,9 +372,11 @@ class AdvancedDownloader extends BaseDownloader {
 	 */
 	function isCompatible(BaseFileDownload $file) {
 		if(self::$checkEnvironmentSettings === true) {
-			if(FDTools::setTimeLimit(0)!==true)
+			if (FDTools::setTimeLimit(0) !== true) {
 				return false;
+			}
 		}
 		return true;
 	}
 }
+

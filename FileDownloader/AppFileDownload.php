@@ -126,4 +126,7 @@ class AppFileDownload extends BaseFileDownload implements IResponse2 {
 		$presenter->sendResponse($this);
 
 	}
+
 }
+
+

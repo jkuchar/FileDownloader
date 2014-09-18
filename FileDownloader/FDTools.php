@@ -68,8 +68,9 @@ class FDTools extends Object {
 
 	static function getAvailableMemory() {
 		$mem = self::parsePHPIniMemoryValue(ini_get("memory_limit"));
-		if ($mem == 0)
+		if ($mem == 0) {
 			return null;
+		}
 		return $mem-memory_get_usage();
 	}
 
@@ -80,8 +81,9 @@ class FDTools extends Object {
 	 */
 	static function parsePHPIniMemoryValue($phpIniValueStr) {
 		$phpIniValueInt = (int)$phpIniValueStr;
-		if ($phpIniValueInt == 0)
+		if ($phpIniValueInt == 0) {
 			return 0;
+		}
 		switch (substr($phpIniValueStr, -1, 1)) {
 			case "K":
 				$phpIniValueInt *= self::KILOBYTE;
@@ -112,8 +114,9 @@ class FDTools extends Object {
 		foreach($res->getHeaders() AS $key => $val) {
 			$res->setHeader($key, null);
 		}
-		if ($setContentType === true)
+		if ($setContentType === true) {
 			$res->setContentType("text/html", "UTF-8");
+		}
 		return $res;
 	}
 
@@ -123,19 +126,23 @@ class FDTools extends Object {
 	 * @return bool
 	 */
 	static function setTimeLimit($time=0) {
-		if(!function_exists("ini_get"))
+		if (!function_exists("ini_get")) {
 			throw new InvalidStateException("Function ini_get must be allowed.");
+		}
 
-		if((int)@ini_get("max_execution_time") === $time)
+		if ((int) @ini_get("max_execution_time") === $time) {
 			return true;
+		}
 
-		if(function_exists("set_time_limit"))
+		if (function_exists("set_time_limit")) {
 			@set_time_limit($time);
-		elseif(function_exists("ini_set"))
+		} elseif (function_exists("ini_set")) {
 			@ini_set("max_execution_time", $time);
+		}
 
-		if((int)@ini_get("max_execution_time") === $time)
+		if ((int) @ini_get("max_execution_time") === $time) {
 			return true;
+		}
 
 		return false;
 	}
@@ -182,8 +189,9 @@ class FDTools extends Object {
 		$errors = array(
 			416=>"Requested Range not satisfiable"
 		);
-		if($message===null and isset($errors[$code]))
+		if ($message === null and isset($errors[$code])) {
 			$message = $errors[$code];
+		}
 		$res = Environment::getHttpResponse();
 		$res->setCode($code);
 		$res->setContentType("plain/text","UTF-8");
@@ -232,16 +240,20 @@ class FDTools extends Object {
 			$sleep  = true;
 			$buffer = (int)round($speedLimit);
 		}
-		if($buffer<1)
+		if ($buffer < 1) {
 			throw new InvalidArgumentException("Buffer must be bigger than zero!");
-		if($buffer>(self::getAvailableMemory()*0.9))
+		}
+		if ($buffer > (self::getAvailableMemory() * 0.9)) {
 			throw new InvalidArgumentException("Buffer is too big! (bigger than available memory)");
+		}
 
 		$fp = fopen($location,"rb");
-		if(!$fp)
+		if (!$fp) {
 			throw new InvalidStateException("Can't open file for reading!");
-		if($end===null)
+		}
+		if ($end === null) {
 			$end = self::filesize($location);
+		}
 		fseek($fp, $start); // Move file pointer to the start of the download
 		while(!feof($fp) && ($p = ftell($fp)) <= $end) {
 			if ($p + $buffer > $end) {
@@ -251,8 +263,9 @@ class FDTools extends Object {
 			}
 			echo fread($fp, $buffer);
 			flush();
-			if ($sleep == true)
+			if ($sleep == true) {
 				sleep(1);
+			}
 		}
 		fclose($fp);
 	}
@@ -269,3 +282,5 @@ class FDTools extends Object {
 	}
 
 }
+
+

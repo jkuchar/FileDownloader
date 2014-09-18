@@ -60,3 +60,5 @@ interface IDownloader {
 	 */
 	function isCompatible(BaseFileDownload $file);
 }
+
+

@@ -85,3 +85,4 @@ class NativePHPDownloader extends BaseDownloader {
 		return true;
 	}
 }
+
