@@ -36,6 +36,8 @@
  * @link       http://filedownloader.projekty.mujserver.net
  */
 
+namespace FileDownloader;
+
 /**
  *
  * @link http://filedownloader.projekty.mujserver.net

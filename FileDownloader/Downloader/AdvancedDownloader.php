@@ -40,6 +40,8 @@
 // TODO: Add custom priority of download modules
 // TODO: Move from float to strings and use bcmath for computations
 
+namespace FileDownloader\Downloader;
+
 /**
  *
  * @link http://filedownloader.projekty.mujserver.net

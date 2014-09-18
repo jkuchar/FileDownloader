@@ -37,6 +37,8 @@
  * @link       http://filedownloader.projekty.mujserver.net
  */
 
+namespace FileDownloader;
+
 /**
  * FileDownload is a small library to make a comfort,
  * fast and simple downloading of files.
