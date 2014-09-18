@@ -1,8 +1,5 @@
 <?php
 
-use FileDownloader\BaseFileDownload;
-use FileDownloader\FileDownload;
-
 /**
  * Copyright (c) 2009, Jan Kuchař
  * All rights reserved.

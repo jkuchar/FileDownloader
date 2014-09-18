@@ -38,6 +38,12 @@
 
 namespace FileDownloader\Downloader;
 
+use FileDownloader\BaseFileDownload;
+use FileDownloader\FDTools;
+use FileDownloader\IDownloader;
+use Nette\Environment;
+use Nette\Object;
+
 /**
  *
  * @link http://filedownloader.projekty.mujserver.net
@@ -46,7 +52,7 @@ namespace FileDownloader\Downloader;
  * @copyright   Copyright (c) 2014 Jan Kuchar
  * @author      Jan Kuchař
  */
-abstract class BaseDownloader extends Nette\Object implements IDownloader {
+abstract class BaseDownloader extends Object implements IDownloader {
 
 	/**
 	 * Sends a standard headers for file download
@@ -54,8 +60,8 @@ abstract class BaseDownloader extends Nette\Object implements IDownloader {
 	 * @param BaseDownloader $downloader    Downloader of the file
 	 */
 	protected function sendStandardFileHeaders(BaseFileDownload $file, BaseDownloader $downloader=null) {
-		$res = \Nette\Environment::getHttpResponse();
-		$req = \Nette\Environment::getHttpRequest();
+		$res = Environment::getHttpResponse();
+		$req = Environment::getHttpRequest();
 		//FDTools::clearHeaders($res); // Voláno už v FileDownload.php
 
 		$res->setContentType($file->mimeType, "UTF-8");
@@ -81,7 +87,7 @@ abstract class BaseDownloader extends Nette\Object implements IDownloader {
 	}
 
 	protected function setupCacheHeaders(BaseFileDownload $file) {
-		$res = \Nette\Environment::getHttpResponse();
+		$res = Environment::getHttpResponse();
 		$res->setExpiration(time() + 99999999);
 		$res->setHeader('Last-Modified', "Mon, 23 Jan 1978 10:00:00 GMT");
 		if (!empty($_SERVER["HTTP_IF_MODIFIED_SINCE"])) {
@@ -92,7 +98,7 @@ abstract class BaseDownloader extends Nette\Object implements IDownloader {
 	}
 
 	protected function setupNonCacheHeaders(BaseFileDownload $file) {
-		$res = \Nette\Environment::getHttpResponse();
+		$res = Environment::getHttpResponse();
 		$res->setHeader('Expires', '0');
 		$res->setHeader('Cache-Control', 'must-revalidate, post-check=0, pre-check=0');
 	}

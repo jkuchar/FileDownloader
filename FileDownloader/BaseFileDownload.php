@@ -39,6 +39,15 @@
 
 namespace FileDownloader;
 
+use Exception;
+use FileDownloader\Downloader\AdvancedDownloader;
+use FileDownloader\Downloader\NativePHPDownloader;
+use Nette\Application\BadRequestException;
+use Nette\Environment;
+use Nette\InvalidArgumentException;
+use Nette\InvalidStateException;
+use Nette\Object;
+
 /**
  * FileDownload is a small library to make a comfort,
  * fast and simple downloading of files.
@@ -67,7 +76,7 @@ namespace FileDownloader;
  * @property-read float $sourceFileSize   File size
  * @property-read int $transferID       TransferId
  */
-abstract class BaseFileDownload extends Nette\Object {
+abstract class BaseFileDownload extends Object {
 	/**
 	 * Array with defaults (will web called <code>$file->$key = $val;</code>)
 	 * @var array
@@ -356,8 +365,8 @@ abstract class BaseFileDownload extends Nette\Object {
 		if($location === null) {
 			$this->vSourceFile = null;
 		}else {
-			if(!file_exists($location)) throw new \Nette\Application\BadRequestException("File not found at '".$location."'!");
-			if(!is_readable($location)) throw new \Nette\InvalidStateException("File is NOT readable!");
+			if(!file_exists($location)) throw new BadRequestException("File not found at '".$location."'!");
+			if(!is_readable($location)) throw new InvalidStateException("File is NOT readable!");
 			$this->transferFileName = pathinfo($location, PATHINFO_BASENAME);
 			$this->vSourceFile = realpath($location);
 		}
@@ -369,7 +378,7 @@ abstract class BaseFileDownload extends Nette\Object {
 	 * @return BaseFileDownload
 	 */
 	function getSourceFile() {
-		if($this->vSourceFile === null) throw new \Nette\InvalidStateException("Location is not set!");
+		if($this->vSourceFile === null) throw new InvalidStateException("Location is not set!");
 		return $this->vSourceFile;
 	}
 
@@ -381,7 +390,7 @@ abstract class BaseFileDownload extends Nette\Object {
 	function setContentDisposition($disposition) {
 		$values = array("inline","attachment");
 		if(!in_array($disposition,$values))
-			throw new Nette\InvalidArgumentException("Content disposition must be one of these: ".implode(",", $values));
+			throw new InvalidArgumentException("Content disposition must be one of these: ".implode(",", $values));
 		$this->vContentDisposition = $disposition;
 		return $this;
 	}
@@ -419,11 +428,11 @@ abstract class BaseFileDownload extends Nette\Object {
 	 * @return BaseFileDownload
 	 */
 	function setSpeedLimit($speed) {
-		if(!is_int($speed)) throw new \Nette\InvalidArgumentException("Max download speed must be intiger!");
-		if($speed<0) throw new \Nette\InvalidArgumentException("Max download speed can't be smaller than zero!");
+		if(!is_int($speed)) throw new InvalidArgumentException("Max download speed must be intiger!");
+		if($speed<0) throw new InvalidArgumentException("Max download speed can't be smaller than zero!");
 		$availableMem = FDTools::getAvailableMemory();
 		$availableMemWithReserve = ($availableMem-100*1024);
-		if($availableMem !== null AND $speed>$availableMemWithReserve) throw new Nette\InvalidArgumentException("Max download speed can't be a bigger than available memory ".$availableMemWithReserve."b!");
+		if($availableMem !== null AND $speed>$availableMemWithReserve) throw new InvalidArgumentException("Max download speed can't be a bigger than available memory ".$availableMemWithReserve."b!");
 		$this->vSpeedLimit = (int)round($speed);
 		return $this;
 	}
@@ -463,7 +472,7 @@ abstract class BaseFileDownload extends Nette\Object {
 		}
 
 		// By file extension from ini file
-		$cache = \Nette\Environment::getCache("FileDownloader");
+		$cache = Environment::getCache("FileDownloader");
 		if(!IsSet($cache["mime-types"]))
 			$cache["mime-types"] = parse_ini_file(dirname(__FILE__).DIRECTORY_SEPARATOR."mime.ini");
 		$mimetypes = $cache["mime-types"];
@@ -501,11 +510,11 @@ abstract class BaseFileDownload extends Nette\Object {
 	 * @param IDownloader $downloader
 	 */
 	function download(IDownloader $downloader = null) {
-		$req = \Nette\Environment::getHttpRequest();
-		$res = \Nette\Environment::getHttpResponse();
+		$req = Environment::getHttpRequest();
+		$res = Environment::getHttpResponse();
 
 		if(self::$closeSession) {
-			$ses = \Nette\Environment::getSession();
+			$ses = Environment::getSession();
 			if($ses->isStarted()) {
 				$ses->close();
 			}
@@ -523,7 +532,7 @@ abstract class BaseFileDownload extends Nette\Object {
 			$downloaders = array($downloader);
 
 		if(count($downloaders)<=0)
-			throw new \Nette\InvalidStateException("There is no registred downloader!");
+			throw new InvalidStateException("There is no registred downloader!");
 
 		krsort($downloaders);
 
@@ -540,7 +549,7 @@ abstract class BaseFileDownload extends Nette\Object {
 					die(); // If all gone ok -> die
 				} catch (FDSkypeMeException $e) {
 					if($res->isSent()) {
-						throw new \Nette\InvalidStateException("Headers are already sent! Can't skip downloader.");
+						throw new InvalidStateException("Headers are already sent! Can't skip downloader.");
 					} else {
 						continue;
 					}
@@ -554,7 +563,7 @@ abstract class BaseFileDownload extends Nette\Object {
 
 		// Pokud se soubor nějakým způsobem odešle - toto už se nespustí
 		if($lastException instanceof Exception) {
-			FDTools::clearHeaders(\Nette\Environment::getHttpResponse(),TRUE);
+			FDTools::clearHeaders(Environment::getHttpResponse(),TRUE);
 			throw $lastException;
 		}
 
@@ -562,7 +571,7 @@ abstract class BaseFileDownload extends Nette\Object {
 			FDTools::_HTTPError(416); // Požadavek na range
 		else
 			$res->setCode(500);
-		throw new \Nette\InvalidStateException("There is no compatible downloader (all downloader returns downloader->isComplatible()=false or was skipped)!");
+		throw new InvalidStateException("There is no compatible downloader (all downloader returns downloader->isComplatible()=false or was skipped)!");
 	}
 }
 

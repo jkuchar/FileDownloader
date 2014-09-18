@@ -39,6 +39,12 @@
 
 namespace FileDownloader;
 
+use Nette\Application\IResponse as IResponse2;
+use Nette\Application\UI\Presenter;
+use Nette\ComponentModel\Component;
+use Nette\Http\IRequest;
+use Nette\Http\IResponse;
+
 /**
  * @link http://filedownloader.projekty.mujserver.net
  *
@@ -48,7 +54,7 @@ namespace FileDownloader;
  *
  * @property Component $parent Parent component
  */
-class AppFileDownload extends BaseFileDownload implements \Nette\Application\IResponse {
+class AppFileDownload extends BaseFileDownload implements IResponse2 {
 	/**
 	 * Parent of this object
 	 * @var Component
@@ -63,34 +69,34 @@ class AppFileDownload extends BaseFileDownload implements \Nette\Application\IRe
 
 	/**
 	 * Getts new instance of self
-	 * @param Nette\ComponentModel\Component $parent
+	 * @param Component $parent
 	 * @return AppFileDownload
 	 */
-	public static function getInstance(Nette\ComponentModel\Component $parent) {
+	public static function getInstance(Component $parent) {
 		return new AppFileDownload($parent);
 	}
 
 	/**
-	 * @param Nette\ComponentModel\Component $parent
+	 * @param Component $parent
 	 */
-	function  __construct(Nette\ComponentModel\Component $parent) {
+	function  __construct(Component $parent) {
 		parent::__construct();
 		$this->setParent($parent);
 	}
 
 	/**
 	 * Setts AppFileDownload parent
-	 * @param Nette\ComponentModel\Component $parent
+	 * @param Component $parent
 	 * @return AppFileDownload
 	 */
-	function setParent(Nette\ComponentModel\Component $parent) {
+	function setParent(Component $parent) {
 		$this->parent = $parent;
 		return $this;
 	}
 
 	/**
 	 * Getts AppFileDownload parent
-	 * @return Nette\ComponentModel\Component
+	 * @return Component
 	 */
 	function getParent() {
 		return $this->parent;
@@ -99,7 +105,7 @@ class AppFileDownload extends BaseFileDownload implements \Nette\Application\IRe
 	/**
 	 * Implementation of IPresenterResponse::send()
 	 */
-	function send(Nette\Http\IRequest $httpRequest, Nette\Http\IResponse $httpResponse) {
+	function send(IRequest $httpRequest, IResponse $httpResponse) {
 		parent::download($this->downloader);
 	}
 
@@ -111,7 +117,7 @@ class AppFileDownload extends BaseFileDownload implements \Nette\Application\IRe
 		$this->downloader = $downloader;
 
 		// Call sendResponse on presenter (used since 2.0 instead of terminate)
-		if($this->parent instanceof Nette\Application\UI\Presenter) {
+		if($this->parent instanceof Presenter) {
 			$presenter = $this->parent;
 		} else {
 			$presenter = $this->parent->lookup("Nette/Application/UI/Presenter",true);

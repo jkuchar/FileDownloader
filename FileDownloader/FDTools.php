@@ -38,6 +38,13 @@
 
 namespace FileDownloader;
 
+use BigFileTools;
+use Nette\Environment;
+use Nette\Http\IResponse;
+use Nette\InvalidArgumentException;
+use Nette\InvalidStateException;
+use Nette\Object;
+
 /**
  *
  * @link http://filedownloader.projekty.mujserver.net
@@ -46,7 +53,7 @@ namespace FileDownloader;
  * @copyright   Copyright (c) 2014 Jan Kuchar
  * @author      Jan Kuchař
  */
-class FDTools extends Nette\Object {
+class FDTools extends Object {
 	const BYTE  = 1;
 	const KILOBYTE = 1024;
 	const MEGABYTE = 1048576;
@@ -90,18 +97,18 @@ class FDTools extends Nette\Object {
 				$phpIniValueInt *= self::TERABYTE;
 				break;
 			default:
-				throw new \Nette\InvalidStateException("Can't parse php ini value!");
+				throw new InvalidStateException("Can't parse php ini value!");
 		}
 		return $phpIniValueInt;
 	}
 
 	/**
 	 * Clears all http headers
-	 * @param \Nette\Http\IResponse $res
-	 * @return \Nette\Http\IResponse
+	 * @param IResponse $res
+	 * @return IResponse
 	 */
-	static function clearHeaders(\Nette\Http\IResponse $res,$setContentType=false) {
-		$res->setCode(\Nette\Http\IResponse::S200_OK);
+	static function clearHeaders(IResponse $res,$setContentType=false) {
+		$res->setCode(IResponse::S200_OK);
 		foreach($res->getHeaders() AS $key => $val) {
 			$res->setHeader($key, null);
 		}
@@ -117,7 +124,7 @@ class FDTools extends Nette\Object {
 	 */
 	static function setTimeLimit($time=0) {
 		if(!function_exists("ini_get"))
-			throw new \Nette\InvalidStateException("Function ini_get must be allowed.");
+			throw new InvalidStateException("Function ini_get must be allowed.");
 
 		if((int)@ini_get("max_execution_time") === $time)
 			return true;
@@ -153,7 +160,7 @@ class FDTools extends Nette\Object {
 	 */
 	static function getContentDispositionHeaderData($basename) {
 		$basename = basename($basename);
-		$req = \Nette\Environment::getHttpRequest();
+		$req = Environment::getHttpRequest();
 		$userAgent = $req->getHeader("User-Agent");
 		if ($userAgent AND strstr($userAgent, "MSIE")) {
 			// workaround for IE filename bug with multiple periods / multiple dots in filename
@@ -177,7 +184,7 @@ class FDTools extends Nette\Object {
 		);
 		if($message===null and isset($errors[$code]))
 			$message = $errors[$code];
-		$res = \Nette\Environment::getHttpResponse();
+		$res = Environment::getHttpResponse();
 		$res->setCode($code);
 		$res->setContentType("plain/text","UTF-8");
 		die("<html><body><h1>HTTP Error ".$code." - ".$message."</h1><p>".$message."</p></body></html>");
@@ -226,13 +233,13 @@ class FDTools extends Nette\Object {
 			$buffer = (int)round($speedLimit);
 		}
 		if($buffer<1)
-			throw new Nette\InvalidArgumentException("Buffer must be bigger than zero!");
+			throw new InvalidArgumentException("Buffer must be bigger than zero!");
 		if($buffer>(self::getAvailableMemory()*0.9))
-			throw new Nette\InvalidArgumentException("Buffer is too big! (bigger than available memory)");
+			throw new InvalidArgumentException("Buffer is too big! (bigger than available memory)");
 
 		$fp = fopen($location,"rb");
 		if(!$fp)
-			throw new \Nette\InvalidStateException("Can't open file for reading!");
+			throw new InvalidStateException("Can't open file for reading!");
 		if($end===null)
 			$end = self::filesize($location);
 		fseek($fp, $start); // Move file pointer to the start of the download

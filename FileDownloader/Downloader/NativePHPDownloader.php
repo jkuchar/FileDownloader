@@ -39,6 +39,9 @@
 
 namespace FileDownloader\Downloader;
 
+use FileDownloader\BaseFileDownload;
+use Nette\InvalidStateException;
+
 /**
  *
  * @link http://filedownloader.projekty.mujserver.net
@@ -63,7 +66,7 @@ class NativePHPDownloader extends BaseDownloader {
 		flush();
 
 		if(!@readfile($file->sourceFile)) {
-			throw new \Nette\InvalidStateException("PHP readfile() function fails!");		}
+			throw new InvalidStateException("PHP readfile() function fails!");		}
 
 		// Or use this code? (from http://www.php.net/manual/en/function.readfile.php#50212)
 		//

@@ -42,6 +42,14 @@
 
 namespace FileDownloader\Downloader;
 
+use Exception;
+use FileDownloader\BaseFileDownload;
+use FileDownloader\FDTools;
+use FileDownloader\FileDownloaderException;
+use Nette\Environment;
+use Nette\InvalidArgumentException;
+use Nette\InvalidStateException;
+
 /**
  *
  * @link http://filedownloader.projekty.mujserver.net
@@ -87,8 +95,8 @@ class AdvancedDownloader extends BaseDownloader {
 
 		@ignore_user_abort(true); // For onAbort event
 
-		$req = \Nette\Environment::getHttpRequest();
-		$res = \Nette\Environment::getHttpResponse();
+		$req = Environment::getHttpRequest();
+		$res = Environment::getHttpResponse();
 
 		$filesize = $this->size   = $transfer->sourceFileSize;
 		$this->length = $this->size; // Content-length
@@ -197,7 +205,7 @@ class AdvancedDownloader extends BaseDownloader {
 
 		$fp = fopen($transfer->sourceFile,"rb");
 		// TODO: Add flock() READ
-		if(!$fp) throw new \Nette\InvalidStateException("Can't open file for reading!");
+		if(!$fp) throw new InvalidStateException open file for reading!");
 		if($this->end===null) $this->end = $filesize-1;
 
 
