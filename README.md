@@ -1,5 +1,6 @@
 File Downloader
 ===============
+[![Code Climate](https://codeclimate.com/github/jkuchar/FileDownloader/badges/gpa.svg)](https://codeclimate.com/github/jkuchar/FileDownloader)
 
 Addon makes controlled downloads of files peace of cake. It supports **client reconnections**, **segmented downloading**, files **over 4GB**, automatic **mime-type detection** and **special characters** in file names. If you need to **control download speed** you are on the right site.
 
