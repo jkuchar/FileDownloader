@@ -42,6 +42,7 @@ use FileDownloader\BaseFileDownload;
 use FileDownloader\FDTools;
 use FileDownloader\IDownloader;
 use Nette\Environment;
+use Nette\Http\Response;
 use Nette\Object;
 
 /**
@@ -91,7 +92,7 @@ abstract class BaseDownloader extends Object implements IDownloader {
 		$res->setExpiration(time() + 99999999);
 		$res->setHeader('Last-Modified', "Mon, 23 Jan 1978 10:00:00 GMT");
 		if (!empty($_SERVER["HTTP_IF_MODIFIED_SINCE"])) {
-			$res->setCode(HttpResponse::S304_NOT_MODIFIED);
+			$res->setCode(Response::S304_NOT_MODIFIED);
 			//header("HTTP/1.1 304 Not Modified");
 			exit();
 		};
