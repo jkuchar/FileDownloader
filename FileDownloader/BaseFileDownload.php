@@ -436,14 +436,18 @@ abstract class BaseFileDownload extends Object {
 	 */
 	function setSpeedLimit($speed) {
 		if (!is_int($speed)) {
-			throw new InvalidArgumentException("Max download speed must be intiger!");
+			throw new InvalidArgumentException("Max download speed must be integer!");
 		}
 		if ($speed < 0) {
 			throw new InvalidArgumentException("Max download speed can't be smaller than zero!");
 		}
 		$availableMem = FDTools::getAvailableMemory();
-		$availableMemWithReserve = ($availableMem-100*1024);
-		if($availableMem !== null AND $speed>$availableMemWithReserve) throw new InvalidArgumentException("Max download speed can't be a bigger than available memory ".$availableMemWithReserve."b!");
+		if ($availableMem) {
+			$availableMemWithReserve = ($availableMem-100*1024);
+			if ($availableMem !== null && $speed>$availableMemWithReserve) {
+				throw new InvalidArgumentException("Max download speed can't be a bigger than available memory ".$availableMemWithReserve."b!");
+			}
+		}
 		$this->vSpeedLimit = (int)round($speed);
 		return $this;
 	}
