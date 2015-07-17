@@ -20,6 +20,13 @@ Or to install example, continue to [example repository](https://github.com/jkuch
 
 ## Basic usage: Just want to download file ##
 
+Import FileDownloader from it's namespace
+
+```php
+use FileDownloader\FileDownload;
+```
+
+And use
 
 ```php
 $filedownload = new FileDownload;
