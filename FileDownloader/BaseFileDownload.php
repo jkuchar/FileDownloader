@@ -444,8 +444,8 @@ abstract class BaseFileDownload extends Object {
 		$availableMem = FDTools::getAvailableMemory();
 		if ($availableMem) {
 			$availableMemWithReserve = ($availableMem-100*1024);
-			if ($availableMem !== null && $speed>$availableMemWithReserve) {
-				throw new InvalidArgumentException("Max download speed can't be a bigger than available memory ".$availableMemWithReserve."b!");
+			if ($speed > $availableMemWithReserve) {
+				throw new InvalidArgumentException("Max download speed can't be a bigger than available memory " . $availableMemWithReserve . "b!");
 			}
 		}
 		$this->vSpeedLimit = (int)round($speed);
