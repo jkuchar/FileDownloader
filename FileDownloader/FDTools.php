@@ -66,6 +66,10 @@ class FDTools extends Object {
 	 */
 	static public $readFileBuffer = 524288; // 512kb
 
+	/**
+	 * Returns available memery in bytes or NULL when no limit it set
+	 * @return int|null
+	 */
 	static function getAvailableMemory() {
 		$mem = self::parsePHPIniMemoryValue(ini_get("memory_limit"));
 		if ($mem == 0) {
@@ -81,7 +85,7 @@ class FDTools extends Object {
 	 */
 	static function parsePHPIniMemoryValue($phpIniValueStr) {
 		$phpIniValueInt = (int)$phpIniValueStr;
-		if ($phpIniValueInt == 0) {
+		if ($phpIniValueInt <= 0) {
 			return 0;
 		}
 		switch (substr($phpIniValueStr, -1, 1)) {
@@ -243,7 +247,8 @@ class FDTools extends Object {
 		if ($buffer < 1) {
 			throw new InvalidArgumentException("Buffer must be bigger than zero!");
 		}
-		if ($buffer > (self::getAvailableMemory() * 0.9)) {
+		$availableMem = self::getAvailableMemory();
+		if ($availableMem && $buffer > ($availableMem * 0.9)) {
 			throw new InvalidArgumentException("Buffer is too big! (bigger than available memory)");
 		}
 

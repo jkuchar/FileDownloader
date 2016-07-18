@@ -201,11 +201,12 @@ class AdvancedDownloader extends BaseDownloader {
 			$buffer = (int)round($transfer->speedLimit);
 		}
 		$this->sleep = $sleep;
-		
+
 		if ($buffer < 1) {
 			throw new InvalidArgumentException("Buffer must be bigger than zero!");
 		}
-		if ($buffer > (FDTools::getAvailableMemory() - memory_get_usage())) {
+		$availableMem = FDTools::getAvailableMemory();
+		if ($availableMem && $buffer > ($availableMem - memory_get_usage())) {
 			throw new InvalidArgumentException("Buffer is too big! (bigger than available memory)");
 		}
 		$this->buffer = $buffer;
@@ -230,7 +231,7 @@ class AdvancedDownloader extends BaseDownloader {
 				$this->cleanAfterTransfer();
 				return;
 			}
-			
+
 			// Use this hack (fread file to start position)
 			$destPos = $this->position = PHP_INT_MAX-1;
 			if(fseek($fp, $this->position, SEEK_SET) === -1) {
@@ -261,7 +262,7 @@ class AdvancedDownloader extends BaseDownloader {
 		if ($this->sleep === false) {
 			// Call onStatusChange next second!
 			$tmpTime = time() + 1;
-		} 
+		}
 
 		$buffer = $this->buffer;
 		while(!feof($fp) && $this->position <= $this->end) {
