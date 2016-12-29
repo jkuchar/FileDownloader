@@ -39,8 +39,9 @@
 namespace FileDownloader;
 
 use BigFileTools;
-use Nette\Environment;
 use Nette\Http\IResponse;
+use Nette\Http\Request;
+use Nette\Http\Response;
 use Nette\InvalidArgumentException;
 use Nette\InvalidStateException;
 use Nette\Object;
@@ -161,18 +162,19 @@ class FDTools extends Object {
 		return "\"" . md5($location . filemtime($location) . self::filesize($location)) . "\"";
 	}
 
+
 	/**
 	 * Returns filename (but if IE fix the bug)
 	 *
 	 * @link http://cz2.php.net/manual/en/function.fpassthru.php#25801
 	 * @author Unknown
+	 * @param Request $request HTTP request
 	 * @param string $basename Path to file or filename
 	 * @return string
 	 */
-	static function getContentDispositionHeaderData($basename) {
+	static function getContentDispositionHeaderData(Request $request, $basename) {
 		$basename = basename($basename);
-		$req = Environment::getHttpRequest();
-		$userAgent = $req->getHeader("User-Agent");
+		$userAgent = $request->getHeader("User-Agent");
 		if ($userAgent AND strstr($userAgent, "MSIE")) {
 			// workaround for IE filename bug with multiple periods / multiple dots in filename
 			// that adds square brackets to filename - eg. setup.abc.exe becomes setup[1].abc.exe
@@ -182,23 +184,24 @@ class FDTools extends Object {
 		return $basename;
 	}
 
+
 	/**
 	 * Sends http error to client
 	 *
 	 * @author Jan Kuchař
-	 * @param int $code       HTTP code
+	 * @param Response $response
+	 * @param int $code HTTP code
 	 * @param string $message HTTP status
 	 */
-	static function _HTTPError($code,$message=null) {
+	static function _HTTPError(Response $response, $code, $message=null) {
 		$errors = array(
 			416=>"Requested Range not satisfiable"
 		);
 		if ($message === null and isset($errors[$code])) {
 			$message = $errors[$code];
 		}
-		$res = Environment::getHttpResponse();
-		$res->setCode($code);
-		$res->setContentType("plain/text","UTF-8");
+		$response->setCode($code);
+		$response->setContentType("plain/text","UTF-8");
 		die("<html><body><h1>HTTP Error ".$code." - ".$message."</h1><p>".$message."</p></body></html>");
 	}
 

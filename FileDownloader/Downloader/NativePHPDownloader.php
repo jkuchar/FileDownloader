@@ -40,6 +40,8 @@
 namespace FileDownloader\Downloader;
 
 use FileDownloader\BaseFileDownload;
+use Nette\Http\Request;
+use Nette\Http\Response;
 use Nette\InvalidStateException;
 
 /**
@@ -56,9 +58,9 @@ class NativePHPDownloader extends BaseDownloader {
 	 * Download file!
 	 * @param BaseFileDownload $file
 	 */
-	function download(BaseFileDownload $file) {
-		$this->sendStandardFileHeaders($file,$this);
-		$file->onBeforeOutputStarts($file,$this);
+	function download(Request $request, Response $response, BaseFileDownload $file) {
+		$this->sendStandardFileHeaders($request, $response, $file, $this);
+		$file->onBeforeOutputStarts($file, $this);
 
 		// Bugfix: when output buffer active, there is a problem with memory
 		// @see http://www.php.net/manual/en/function.readfile.php#81032

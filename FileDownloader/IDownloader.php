@@ -37,6 +37,8 @@
  */
 
 namespace FileDownloader;
+use Nette\Http\Request;
+use Nette\Http\Response;
 
 /**
  *
@@ -49,13 +51,16 @@ namespace FileDownloader;
 interface IDownloader {
 	/**
 	 * Download file!
-	 * @param FileDownload $file
+	 * @param Request $request HTTP request
+	 * @param Response $response HTTP response
+	 * @param BaseFileDownload|FileDownload $file
 	 */
-	function download(BaseFileDownload $file);
+	function download(Request $request, Response $response, BaseFileDownload $file);
+
 
 	/**
 	 * Is this downloader compatible?
-	 * @param FileDownload $file
+	 * @param BaseFileDownload|FileDownload $file
 	 * @return bool TRUE if is compatible; FALSE if not
 	 */
 	function isCompatible(BaseFileDownload $file);

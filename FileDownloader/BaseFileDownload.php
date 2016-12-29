@@ -43,7 +43,9 @@ use Exception;
 use FileDownloader\Downloader\AdvancedDownloader;
 use FileDownloader\Downloader\NativePHPDownloader;
 use Nette\Application\BadRequestException;
-use Nette\Environment;
+use Nette\Http\Request;
+use Nette\Http\Response;
+use Nette\Http\Session;
 use Nette\InvalidArgumentException;
 use Nette\InvalidStateException;
 use Nette\Object;
@@ -75,6 +77,17 @@ use Nette\Object;
  * @property int $contentDisposition    Content disposition: inline or attachment
  * @property-read float $sourceFileSize   File size
  * @property-read int $transferID       TransferId
+ *
+ * Callbacks:
+ * @method void onBeforeDownloaderStarts(BaseFileDownload $fileDownload, IDownloader $downloader)
+ * @method void onBeforeOutputStarts(BaseFileDownload $fileDownload, IDownloader $downloader)
+ * @method void onStatusChange(BaseFileDownload $fileDownload, IDownloader $downloader)
+ * @method void onComplete(BaseFileDownload $fileDownload, IDownloader $downloader)
+ * @method void onTransferContinue(BaseFileDownload $fileDownload, IDownloader $downloader)
+ * @method void onNewTransferStart(BaseFileDownload $fileDownload, IDownloader $downloader)
+ * @method void onAbort(BaseFileDownload $fileDownload, IDownloader $downloader)
+ * @method void onConnectionLost(BaseFileDownload $fileDownload, IDownloader $downloader)
+
  */
 abstract class BaseFileDownload extends Object {
 	/**
@@ -88,12 +101,6 @@ abstract class BaseFileDownload extends Object {
 	 * @var array
 	 */
 	private static $fileDownloaders=array();
-
-	/**
-	 * Close session before start download? (if not, it will block session until file is transferred!)
-	 * @var bool
-	 */
-	public static $closeSession = true;
 
 	/**
 	 * Add file downlaoder
@@ -491,15 +498,11 @@ abstract class BaseFileDownload extends Object {
 		}
 
 		// By file extension from ini file
-		$cache = Environment::getCache("FileDownloader");
-		if (!IsSet($cache["mime-types"])) {
-			$cache["mime-types"] = parse_ini_file(dirname(__FILE__) . DIRECTORY_SEPARATOR . "mime.ini");
-		}
-		$mimetypes = $cache["mime-types"];
+		$mimeTypes = parse_ini_file(dirname(__FILE__) . DIRECTORY_SEPARATOR . "mime.ini");
 
 		$extension = pathinfo($this->sourceFile, PATHINFO_EXTENSION);
-		if (array_key_exists($extension, $mimetypes)) {
-			$mime = $mimetypes[$extension];
+		if (array_key_exists($extension, $mimeTypes)) {
+			$mime = $mimeTypes[$extension];
 		}
 
 		if (FDTools::isValidMimeType($mime)) {
@@ -527,19 +530,19 @@ abstract class BaseFileDownload extends Object {
 		return FDTools::filesize($this->sourceFile);
 	}
 
+
 	/**
 	 * Download the file!
 	 * @param IDownloader $downloader
+	 * @param Request $request HTTP request
+	 * @param Response $response HTTP response
+	 * @param Session $session HTTP Session (this is needed to be able to close it
+	 * @throws Exception
 	 */
-	function download(IDownloader $downloader = null) {
-		$req = Environment::getHttpRequest();
-		$res = Environment::getHttpResponse();
+	function download(IDownloader $downloader = null, Request $request, Response $response, Session $session) {
 
-		if(self::$closeSession) {
-			$ses = Environment::getSession();
-			if($ses->isStarted()) {
-				$ses->close();
-			}
+		if($session->isStarted()) {
+			$session->close();
 		}
 
 		if($this->getContentDisposition() == "inline" AND is_null($this->enableBrowserCache)) {
@@ -565,21 +568,21 @@ abstract class BaseFileDownload extends Object {
 		foreach($downloaders AS $downloader) {
 			if($downloader instanceof IDownloader and $downloader->isCompatible($this)) {
 				try {
-					FDTools::clearHeaders($res); // Delete all headers
+					FDTools::clearHeaders($response); // Delete all headers
 					$this->transferredBytes = 0;
 					$this->onBeforeDownloaderStarts($this,$downloader);
 					$downloader->download($this); // Start download
 					$this->onComplete($this,$downloader);
 					die(); // If all gone ok -> die
 				} catch (FDSkypeMeException $e) {
-					if($res->isSent()) {
+					if($response->isSent()) {
 						throw new InvalidStateException("Headers are already sent! Can't skip downloader.");
 					} else {
 						continue;
 					}
 				} catch (Exception $e) {
-					if(!$res->isSent())
-						FDTools::clearHeaders($res);
+					if(!$response->isSent())
+						FDTools::clearHeaders($response);
 					throw $e;
 				}
 			}
@@ -587,14 +590,14 @@ abstract class BaseFileDownload extends Object {
 
 		// Pokud se soubor nějakým způsobem odešle - toto už se nespustí
 		if($lastException instanceof Exception) {
-			FDTools::clearHeaders(Environment::getHttpResponse(),TRUE);
+			FDTools::clearHeaders($response,TRUE);
 			throw $lastException;
 		}
 
-		if($req->getHeader("Range"))
-			FDTools::_HTTPError(416); // Požadavek na range
+		if($request->getHeader("Range"))
+			FDTools::_HTTPError($response, 416); // Požadavek na range
 		else
-			$res->setCode(500);
+			$response->setCode(500);
 		throw new InvalidStateException("There is no compatible downloader (all downloader returns downloader->isComplatible()=false or was skipped)!");
 	}
 }

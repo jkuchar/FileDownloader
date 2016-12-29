@@ -47,6 +47,8 @@ use FileDownloader\BaseFileDownload;
 use FileDownloader\FDTools;
 use FileDownloader\FileDownloaderException;
 use Nette\Environment;
+use Nette\Http\Request;
+use Nette\Http\Response;
 use Nette\InvalidArgumentException;
 use Nette\InvalidStateException;
 
@@ -85,18 +87,11 @@ class AdvancedDownloader extends BaseDownloader {
 	 */
 	protected $sleep;
 
-	/**
-	 * Download file!
-	 * @param BaseFileDownload $file
-	 */
-	function download(BaseFileDownload $transfer) {
+	function download(Request $request, Response $response, BaseFileDownload $transfer) {
 		$this->currentTransfer = $transfer;
-		$this->sendStandardFileHeaders($transfer,$this);
+		$this->sendStandardFileHeaders($request, $response, $transfer,$this);
 
 		@ignore_user_abort(true); // For onAbort event
-
-		$req = Environment::getHttpRequest();
-		$res = Environment::getHttpResponse();
 
 		$filesize = $this->size   = $transfer->sourceFileSize;
 		$this->length = $this->size; // Content-length
@@ -119,17 +114,17 @@ class AdvancedDownloader extends BaseDownloader {
 		 */
 
 		//$res->setHeader("Accept-Ranges", "0-".$this->end); // single-part - now not accepted by mozilla
-		$res->setHeader("Accept-Ranges", "bytes"); // multi-part (through Mozilla)
+		$response->setHeader("Accept-Ranges", "bytes"); // multi-part (through Mozilla)
 		// http://www.w3.org/Protocols/rfc2616/rfc2616-sec19.html#sec19.2
 
-		if ($req->getHeader("Range", false)) // If partial download
+		if ($request->getHeader("Range", false)) // If partial download
 		{
 			try {
 				$range_start = $this->start;
 				$range_end   = $this->end;
 
 				// Extract the range string
-				$rangeArray = explode('=', $req->getHeader("Range"), 2);
+				$rangeArray = explode('=', $request->getHeader("Range"), 2);
 				$range = $rangeArray[1];
 
 				// Make sure the client hasn't sent us a multibyte range
@@ -170,18 +165,18 @@ class AdvancedDownloader extends BaseDownloader {
 				$this->length = $this->end - $this->start + 1; // Calculate new content length
 			} catch (FileDownloaderException $e) {
 				if ($e->getCode() === 416) {
-					$res->setHeader("Content-Range", "bytes $this->start-$this->end/$this->size");
-					FDTools::_HTTPError(416);
+					$response->setHeader("Content-Range", "bytes $this->start-$this->end/$this->size");
+					FDTools::_HTTPError($response, 416);
 				} else {
 					throw $e;
 				}
 			}
-			$res->setCode(206); // Partial content
+			$response->setCode(206); // Partial content
 		} // End of if partial download
 
 		// Notify the client the byte range we'll be outputting
-		$res->setHeader("Content-Range","bytes $this->start-$this->end/$this->size");
-		$res->setHeader("Content-Length",$this->length);
+		$response->setHeader("Content-Range","bytes $this->start-$this->end/$this->size");
+		$response->setHeader("Content-Length",$this->length);
 
 		/* ### Call callbacks ### */
 
