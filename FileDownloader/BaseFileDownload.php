@@ -571,7 +571,7 @@ abstract class BaseFileDownload extends Object {
 					FDTools::clearHeaders($response); // Delete all headers
 					$this->transferredBytes = 0;
 					$this->onBeforeDownloaderStarts($this,$downloader);
-					$downloader->download($this); // Start download
+					$downloader->download($request, $response, $this); // Start download
 					$this->onComplete($this,$downloader);
 					die(); // If all gone ok -> die
 				} catch (FDSkypeMeException $e) {
