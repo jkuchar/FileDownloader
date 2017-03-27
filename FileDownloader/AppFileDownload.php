@@ -44,6 +44,9 @@ use Nette\Application\UI\Presenter;
 use Nette\ComponentModel\Component;
 use Nette\Http\IRequest;
 use Nette\Http\IResponse;
+use Nette\Http\Request;
+use Nette\Http\Response;
+use Nette\Http\Session;
 
 /**
  * @link http://filedownloader.projekty.mujserver.net
@@ -68,20 +71,40 @@ class AppFileDownload extends BaseFileDownload implements IResponse2 {
 	private $downloader;
 
 	/**
+	 * @var Request
+	 */
+	private $request;
+
+	/**
+	 * @var Response
+	 */
+	private $response;
+
+	/**
+	 * @var Session
+	 */
+	private $session;
+
+
+	/**
 	 * Getts new instance of self
 	 * @param Component $parent
 	 * @return AppFileDownload
+	 * @deprecated
 	 */
-	public static function getInstance(Component $parent) {
-		return new AppFileDownload($parent);
+	public static function getInstance(Component $parent, Request $request, Response $response, Session $session) {
+		return new AppFileDownload($parent, $request, $response, $session);
 	}
 
 	/**
 	 * @param Component $parent
 	 */
-	public function __construct(Component $parent) {
+	public function __construct(Component $parent, Request $request, Response $response, Session $session) {
 		parent::__construct();
 		$this->setParent($parent);
+		$this->request = $request;
+		$this->response = $response;
+		$this->session = $session;
 	}
 
 	/**
@@ -106,14 +129,14 @@ class AppFileDownload extends BaseFileDownload implements IResponse2 {
 	 * Implementation of IPresenterResponse::send()
 	 */
 	public function send(IRequest $httpRequest, IResponse $httpResponse) {
-		parent::download($this->downloader);
+		parent::download($this->downloader, $this->request, $this->response, $this->session);
 	}
 
 	/**
 	 * Start download of the file!
 	 * @param IDownloader $downloader
 	 */
-	public function download(IDownloader $downloader = null) {
+	public function download(IDownloader $downloader = null, Request $request, Response $response, Session $session) {
 		$this->downloader = $downloader;
 
 		// Call sendResponse on presenter (used since 2.0 instead of terminate)
