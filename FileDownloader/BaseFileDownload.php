@@ -141,8 +141,8 @@ abstract class BaseFileDownload extends Object {
 	 */
 	private $vTransferID = -1;
 
-	const CONTENT_DISPOSITION_ATTACHMENT = "attachment";
-	const CONTENT_DISPOSITION_INLINE = "inline";
+	const CONTENT_DISPOSITION_ATTACHMENT = 'attachment';
+	const CONTENT_DISPOSITION_INLINE = 'inline';
 
 	/**
 	 * Content disposition: attachment / inline
@@ -341,15 +341,15 @@ abstract class BaseFileDownload extends Object {
 	 * @return BaseFileDownload
 	 */
 	private function addCallback($fceName, $callback) {
-		preg_match("/^.*::add(.*)Callback$/", $fceName, $matches);
-		$varName = "on".$matches[1];
+		preg_match('/^.*::add(.*)Callback$/', $fceName, $matches);
+		$varName = 'on' .$matches[1];
 		$var = &$this->$varName;
 		$var[] = $callback;
 		return $this;
 	}
 
 	public function  __construct() {
-		$this->vTransferID = time()."-".mt_rand();
+		$this->vTransferID = time(). '-' .mt_rand();
 		foreach(self::$defaults AS $key => $val) {
 			$this->$key = $val;
 		}
@@ -376,7 +376,7 @@ abstract class BaseFileDownload extends Object {
 				throw new BadRequestException("File not found at '" . $location . "'!");
 			}
 			if (!is_readable($location)) {
-				throw new InvalidStateException("File is NOT readable!");
+				throw new InvalidStateException('File is NOT readable!');
 			}
 			$this->transferFileName = pathinfo($location, PATHINFO_BASENAME);
 			$this->vSourceFile = realpath($location);
@@ -390,7 +390,7 @@ abstract class BaseFileDownload extends Object {
 	 */
 	public function getSourceFile() {
 		if ($this->vSourceFile === null) {
-			throw new InvalidStateException("Location is not set!");
+			throw new InvalidStateException('Location is not set!');
 		}
 		return $this->vSourceFile;
 	}
@@ -401,9 +401,9 @@ abstract class BaseFileDownload extends Object {
 	 * @return BaseFileDownload
 	 */
 	public function setContentDisposition($disposition) {
-		$values = array("inline","attachment");
+		$values = array('inline', 'attachment');
 		if (!in_array($disposition, $values)) {
-			throw new InvalidArgumentException("Content disposition must be one of these: " . implode(",", $values));
+			throw new InvalidArgumentException('Content disposition must be one of these: ' . implode(',', $values));
 		}
 		$this->vContentDisposition = $disposition;
 		return $this;
@@ -443,7 +443,7 @@ abstract class BaseFileDownload extends Object {
 	 */
 	public function setSpeedLimit($speed) {
 		if (!is_int($speed)) {
-			throw new InvalidArgumentException("Max download speed must be integer!");
+			throw new InvalidArgumentException('Max download speed must be integer!');
 		}
 		if ($speed < 0) {
 			throw new InvalidArgumentException("Max download speed can't be smaller than zero!");
@@ -452,7 +452,7 @@ abstract class BaseFileDownload extends Object {
 		if ($availableMem) {
 			$availableMemWithReserve = ($availableMem-100*1024);
 			if ($speed > $availableMemWithReserve) {
-				throw new InvalidArgumentException("Max download speed can't be a bigger than available memory " . $availableMemWithReserve . "b!");
+				throw new InvalidArgumentException("Max download speed can't be a bigger than available memory " . $availableMemWithReserve . 'b!');
 			}
 		}
 		$this->vSpeedLimit = (int)round($speed);
@@ -479,7 +479,7 @@ abstract class BaseFileDownload extends Object {
 		}
 
 		$mime = "";
-		if (extension_loaded('fileinfo') and function_exists("finfo_open")) {
+		if (extension_loaded('fileinfo') and function_exists('finfo_open')) {
 			//TODO: test this code:
 			if ($finfo = @finfo_open(FILEINFO_MIME)) {
 				$mime = @finfo_file($finfo, $this->sourceFile);
@@ -490,7 +490,7 @@ abstract class BaseFileDownload extends Object {
 			}
 		}
 
-		if(function_exists("mime_content_type")) {
+		if(function_exists('mime_content_type')) {
 			$mime = mime_content_type($this->sourceFile);
 			if (FDTools::isValidMimeType($mime)) {
 				return $mime;
@@ -498,7 +498,7 @@ abstract class BaseFileDownload extends Object {
 		}
 
 		// By file extension from ini file
-		$mimeTypes = parse_ini_file(__DIR__ . DIRECTORY_SEPARATOR . "mime.ini");
+		$mimeTypes = parse_ini_file(__DIR__ . DIRECTORY_SEPARATOR . 'mime.ini');
 
 		$extension = pathinfo($this->sourceFile, PATHINFO_EXTENSION);
 		if (array_key_exists($extension, $mimeTypes)) {
@@ -508,7 +508,7 @@ abstract class BaseFileDownload extends Object {
 		if (FDTools::isValidMimeType($mime)) {
 			return $mime;
 		} else {
-			return "application/octet-stream";
+			return 'application/octet-stream';
 		}
 	}
 
@@ -545,7 +545,7 @@ abstract class BaseFileDownload extends Object {
 			$session->close();
 		}
 
-		if($this->getContentDisposition() == "inline" AND $this->enableBrowserCache === NULL) {
+		if($this->getContentDisposition() == 'inline' AND $this->enableBrowserCache === NULL) {
 			$this->enableBrowserCache = true;
 		}else{
 			$this->enableBrowserCache = false;
@@ -558,7 +558,7 @@ abstract class BaseFileDownload extends Object {
 		}
 
 		if (count($downloaders) <= 0) {
-			throw new InvalidStateException("There is no registred downloader!");
+			throw new InvalidStateException('There is no registred downloader!');
 		}
 
 		krsort($downloaders);
@@ -594,11 +594,11 @@ abstract class BaseFileDownload extends Object {
 			throw $lastException;
 		}
 
-		if($request->getHeader("Range"))
+		if($request->getHeader('Range'))
 			FDTools::_HTTPError($response, 416); // Požadavek na range
 		else
 			$response->setCode(500);
-		throw new InvalidStateException("There is no compatible downloader (all downloader returns downloader->isComplatible()=false or was skipped)!");
+		throw new InvalidStateException('There is no compatible downloader (all downloader returns downloader->isComplatible()=false or was skipped)!');
 	}
 }
 

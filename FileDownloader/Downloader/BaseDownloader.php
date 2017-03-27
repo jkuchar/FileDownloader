@@ -64,10 +64,10 @@ abstract class BaseDownloader extends Object implements IDownloader {
 	protected function sendStandardFileHeaders(Request $request, Response $response, BaseFileDownload $file, BaseDownloader $downloader=null) {
 		//FDTools::clearHeaders($res); // Voláno už v FileDownload.php
 
-		$response->setContentType($file->mimeType, "UTF-8");
-		$response->setHeader("X-File-Downloader", "File Downloader (http://filedownloader.projekty.mujserver.net)");
+		$response->setContentType($file->mimeType, 'UTF-8');
+		$response->setHeader('X-File-Downloader', 'File Downloader (http://filedownloader.projekty.mujserver.net)');
 		if ($downloader !== null) {
-			$response->setHeader("X-FileDownloader-Actual-Script", $downloader->getReflection()->name);
+			$response->setHeader('X-FileDownloader-Actual-Script', $downloader->getReflection()->name);
 		}
 
 		$response->setHeader('Pragma', 'public'); // Fix for IE - Content-Disposition
@@ -88,8 +88,8 @@ abstract class BaseDownloader extends Object implements IDownloader {
 
 	protected function setupCacheHeaders(Response $response, BaseFileDownload $file) {
 		$response->setExpiration(time() + 99999999);
-		$response->setHeader('Last-Modified', "Mon, 23 Jan 1978 10:00:00 GMT");
-		if (!empty($_SERVER["HTTP_IF_MODIFIED_SINCE"])) {
+		$response->setHeader('Last-Modified', 'Mon, 23 Jan 1978 10:00:00 GMT');
+		if (!empty($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
 			$response->setCode(Response::S304_NOT_MODIFIED);
 			//header("HTTP/1.1 304 Not Modified");
 			exit();

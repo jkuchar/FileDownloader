@@ -113,17 +113,17 @@ class AdvancedDownloader extends BaseDownloader {
 		 */
 
 		//$res->setHeader("Accept-Ranges", "0-".$this->end); // single-part - now not accepted by mozilla
-		$response->setHeader("Accept-Ranges", "bytes"); // multi-part (through Mozilla)
+		$response->setHeader('Accept-Ranges', 'bytes'); // multi-part (through Mozilla)
 		// http://www.w3.org/Protocols/rfc2616/rfc2616-sec19.html#sec19.2
 
-		if ($request->getHeader("Range", false)) // If partial download
+		if ($request->getHeader('Range', false)) // If partial download
 		{
 			try {
 				$range_start = $this->start;
 				$range_end   = $this->end;
 
 				// Extract the range string
-				$rangeArray = explode('=', $request->getHeader("Range"), 2);
+				$rangeArray = explode('=', $request->getHeader('Range'), 2);
 				$range = $rangeArray[1];
 
 				// Make sure the client hasn't sent us a multibyte range
@@ -131,7 +131,7 @@ class AdvancedDownloader extends BaseDownloader {
 					// (?) Shoud this be issued here, or should the first
 					// range be used? Or should the header be ignored and
 					// we output the whole content?
-					throw new FileDownloaderException("HTTP 416",416);
+					throw new FileDownloaderException('HTTP 416',416);
 				}
 
 				// If the range starts with an '-' we start from the beginning
@@ -155,7 +155,7 @@ class AdvancedDownloader extends BaseDownloader {
 				$range_end = ($range_end > $this->end) ? $this->end : $range_end;
 				// Validate the requested range and return an error if it's not correct.
 				if ($range_start > $range_end || $range_start > $this->size - 1 || $range_end >= $this->size) {
-					throw new FileDownloaderException("HTTP 416",416);
+					throw new FileDownloaderException('HTTP 416',416);
 				}
 
 				// All is ok - so assign variables back
@@ -164,7 +164,7 @@ class AdvancedDownloader extends BaseDownloader {
 				$this->length = $this->end - $this->start + 1; // Calculate new content length
 			} catch (FileDownloaderException $e) {
 				if ($e->getCode() === 416) {
-					$response->setHeader("Content-Range", "bytes $this->start-$this->end/$this->size");
+					$response->setHeader('Content-Range', "bytes $this->start-$this->end/$this->size");
 					FDTools::_HTTPError($response, 416);
 				} else {
 					throw $e;
@@ -174,8 +174,8 @@ class AdvancedDownloader extends BaseDownloader {
 		} // End of if partial download
 
 		// Notify the client the byte range we'll be outputting
-		$response->setHeader("Content-Range","bytes $this->start-$this->end/$this->size");
-		$response->setHeader("Content-Length",$this->length);
+		$response->setHeader('Content-Range',"bytes $this->start-$this->end/$this->size");
+		$response->setHeader('Content-Length',$this->length);
 
 		/* ### Call callbacks ### */
 
@@ -197,17 +197,17 @@ class AdvancedDownloader extends BaseDownloader {
 		$this->sleep = $sleep;
 
 		if ($buffer < 1) {
-			throw new InvalidArgumentException("Buffer must be bigger than zero!");
+			throw new InvalidArgumentException('Buffer must be bigger than zero!');
 		}
 		$availableMem = FDTools::getAvailableMemory();
 		if ($availableMem && $buffer > ($availableMem - memory_get_usage())) {
-			throw new InvalidArgumentException("Buffer is too big! (bigger than available memory)");
+			throw new InvalidArgumentException('Buffer is too big! (bigger than available memory)');
 		}
 		$this->buffer = $buffer;
 
 
 
-		$fp = fopen($transfer->sourceFile,"rb");
+		$fp = fopen($transfer->sourceFile, 'rb');
 		// TODO: Add flock() READ
 		if (!$fp) {
 			throw new InvalidStateException("Can't open file for reading!");
@@ -276,19 +276,21 @@ class AdvancedDownloader extends BaseDownloader {
 	}
 
 	protected function processByCUrl() {
-		if(function_exists("curl_init")) { // Curl available
+		if(function_exists('curl_init')) { // Curl available
 
 			$transfer = $this->currentTransfer;
 
-			$ch = curl_init("file://" . realpath($transfer->sourceFile));
+			$ch = curl_init('file://' . realpath($transfer->sourceFile));
 			$range = $this->start.'-'.$this->end; // HTTP range
 			curl_setopt($ch, CURLOPT_RANGE, $range);
 			curl_setopt($ch, CURLOPT_BINARYTRANSFER, 1);
 			curl_setopt($ch, CURLOPT_BUFFERSIZE, $this->buffer);
-			curl_setopt($ch, CURLOPT_WRITEFUNCTION, array($this,"_curlProcessBlock"));
+			curl_setopt($ch, CURLOPT_WRITEFUNCTION, array($this,
+				'_curlProcessBlock'
+			));
 			$curlRet = curl_exec($ch);
 			if($curlRet === false) {
-				throw new Exception("cUrl error number ".curl_errno($ch).": ".curl_error($ch));
+				throw new Exception('cUrl error number ' .curl_errno($ch). ': ' .curl_error($ch));
 			}
 			return true;
 		}else{

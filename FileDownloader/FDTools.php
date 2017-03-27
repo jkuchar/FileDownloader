@@ -72,7 +72,7 @@ class FDTools extends Object {
 	 * @return int|null
 	 */
 	public static function getAvailableMemory() {
-		$mem = self::parsePHPIniMemoryValue(ini_get("memory_limit"));
+		$mem = self::parsePHPIniMemoryValue(ini_get('memory_limit'));
 		if ($mem == 0) {
 			return null;
 		}
@@ -90,17 +90,17 @@ class FDTools extends Object {
 			return 0;
 		}
 		switch ($phpIniValueStr[strlen($phpIniValueStr) - 1]) {
-			case "K":
+			case 'K':
 				$phpIniValueInt *= self::KILOBYTE;
 				break;
-			case "M":
+			case 'M':
 				$phpIniValueInt *= self::MEGABYTE;
 				;
 				break;
-			case "G":
+			case 'G':
 				$phpIniValueInt *= self::GYGABYTE;
 				break;
-			case "T":
+			case 'T':
 				$phpIniValueInt *= self::TERABYTE;
 				break;
 			default:
@@ -120,7 +120,7 @@ class FDTools extends Object {
 			$res->setHeader($key, null);
 		}
 		if ($setContentType === true) {
-			$res->setContentType("text/html", "UTF-8");
+			$res->setContentType('text/html', 'UTF-8');
 		}
 		return $res;
 	}
@@ -131,21 +131,21 @@ class FDTools extends Object {
 	 * @return bool
 	 */
 	public static function setTimeLimit($time=0) {
-		if (!function_exists("ini_get")) {
-			throw new InvalidStateException("Function ini_get must be allowed.");
+		if (!function_exists('ini_get')) {
+			throw new InvalidStateException('Function ini_get must be allowed.');
 		}
 
-		if ((int) @ini_get("max_execution_time") === $time) {
+		if ((int) @ini_get('max_execution_time') === $time) {
 			return true;
 		}
 
-		if (function_exists("set_time_limit")) {
+		if (function_exists('set_time_limit')) {
 			@set_time_limit($time);
-		} elseif (function_exists("ini_set")) {
-			@ini_set("max_execution_time", $time);
+		} elseif (function_exists('ini_set')) {
+			@ini_set('max_execution_time', $time);
 		}
 
-		if ((int) @ini_get("max_execution_time") === $time) {
+		if ((int) @ini_get('max_execution_time') === $time) {
 			return true;
 		}
 
@@ -159,7 +159,7 @@ class FDTools extends Object {
 	 * @return string             ETag
 	 */
 	public static function getETag($location) {
-		return "\"" . md5($location . filemtime($location) . self::filesize($location)) . "\"";
+		return '"' . md5($location . filemtime($location) . self::filesize($location)) . '"';
 	}
 
 
@@ -174,8 +174,8 @@ class FDTools extends Object {
 	 */
 	public static function getContentDispositionHeaderData(Request $request, $basename) {
 		$basename = basename($basename);
-		$userAgent = $request->getHeader("User-Agent");
-		if ($userAgent AND strstr($userAgent, "MSIE")) {
+		$userAgent = $request->getHeader('User-Agent');
+		if ($userAgent AND strstr($userAgent, 'MSIE')) {
 			// workaround for IE filename bug with multiple periods / multiple dots in filename
 			// that adds square brackets to filename - eg. setup.abc.exe becomes setup[1].abc.exe
 			$iefilename = preg_replace('/\./', '%2e', $basename, substr_count($basename, '.') - 1);
@@ -195,14 +195,14 @@ class FDTools extends Object {
 	 */
 	public static function _HTTPError(Response $response, $code, $message=null) {
 		$errors = array(
-			416=>"Requested Range not satisfiable"
+			416=> 'Requested Range not satisfiable'
 		);
 		if ($message === null and isset($errors[$code])) {
 			$message = $errors[$code];
 		}
 		$response->setCode($code);
-		$response->setContentType("plain/text","UTF-8");
-		die("<html><body><h1>HTTP Error ".$code." - ".$message."</h1><p>".$message."</p></body></html>");
+		$response->setContentType('plain/text', 'UTF-8');
+		die('<html><body><h1>HTTP Error ' .$code. ' - ' .$message. '</h1><p>' .$message. '</p></body></html>');
 	}
 
 	/**
@@ -248,14 +248,14 @@ class FDTools extends Object {
 			$buffer = (int)round($speedLimit);
 		}
 		if ($buffer < 1) {
-			throw new InvalidArgumentException("Buffer must be bigger than zero!");
+			throw new InvalidArgumentException('Buffer must be bigger than zero!');
 		}
 		$availableMem = self::getAvailableMemory();
 		if ($availableMem && $buffer > ($availableMem * 0.9)) {
-			throw new InvalidArgumentException("Buffer is too big! (bigger than available memory)");
+			throw new InvalidArgumentException('Buffer is too big! (bigger than available memory)');
 		}
 
-		$fp = fopen($location,"rb");
+		$fp = fopen($location, 'rb');
 		if (!$fp) {
 			throw new InvalidStateException("Can't open file for reading!");
 		}

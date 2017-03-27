@@ -120,7 +120,7 @@ class AppFileDownload extends BaseFileDownload implements IResponse2 {
 		if($this->parent instanceof Presenter) {
 			$presenter = $this->parent;
 		} else {
-			$presenter = $this->parent->lookup("Nette/Application/UI/Presenter",true);
+			$presenter = $this->parent->lookup('Nette/Application/UI/Presenter',true);
 		}
 
 		$presenter->sendResponse($this);
