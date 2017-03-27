@@ -64,7 +64,7 @@ class NativePHPDownloader extends BaseDownloader {
 
 		// Bugfix: when output buffer active, there is a problem with memory
 		// @see http://www.php.net/manual/en/function.readfile.php#81032
-		while (@ob_end_flush()); // @see example at http://php.net/manual/en/function.ob-end-flush.php
+		while (@ob_end_flush()) {}; // @see example at http://php.net/manual/en/function.ob-end-flush.php
 		flush();
 
 		if(!@readfile($file->sourceFile)) {

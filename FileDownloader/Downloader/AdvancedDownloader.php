@@ -242,7 +242,7 @@ class AdvancedDownloader extends BaseDownloader {
 			$this->position = $this->start;
 		}
 
-		$this->processNative($fp,$sleep);
+		$this->processNative($fp);
 		$this->cleanAfterTransfer();
 	}
 

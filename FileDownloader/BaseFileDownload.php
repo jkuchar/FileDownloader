@@ -386,7 +386,7 @@ abstract class BaseFileDownload extends Object {
 
 	/**
 	 * Getts location of the source file
-	 * @return BaseFileDownload
+	 * @return string
 	 */
 	public function getSourceFile() {
 		if ($this->vSourceFile === null) {
@@ -402,7 +402,7 @@ abstract class BaseFileDownload extends Object {
 	 */
 	public function setContentDisposition($disposition) {
 		$values = array('inline', 'attachment');
-		if (!in_array($disposition, $values)) {
+		if (!in_array($disposition, $values, TRUE)) {
 			throw new InvalidArgumentException('Content disposition must be one of these: ' . implode(',', $values));
 		}
 		$this->vContentDisposition = $disposition;
