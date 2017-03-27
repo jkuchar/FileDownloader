@@ -545,7 +545,7 @@ abstract class BaseFileDownload extends Object {
 			$session->close();
 		}
 
-		if($this->getContentDisposition() == 'inline' && $this->enableBrowserCache === NULL) {
+		if($this->enableBrowserCache === NULL && $this->getContentDisposition() === 'inline') {
 			$this->enableBrowserCache = true;
 		}else{
 			$this->enableBrowserCache = false;

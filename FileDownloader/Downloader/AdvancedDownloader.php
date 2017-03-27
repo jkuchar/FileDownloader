@@ -137,7 +137,7 @@ class AdvancedDownloader extends BaseDownloader {
 				// If the range starts with an '-' we start from the beginning
 				// If not, we forward the file pointer
 				// And make sure to get the end byte if spesified
-				if ($range{0} == '-') {
+				if ($range{0} === '-') {
 					// The n-number of the last bytes is requested
 					$range_start = $this->size - (float)substr($range, 1);
 				}
@@ -328,7 +328,7 @@ class AdvancedDownloader extends BaseDownloader {
 		flush(); // PHP: Do not buffer it - send it to browser!
 		@ob_flush();
 
-		if(connection_status()!=CONNECTION_NORMAL) {
+		if(connection_status() !== CONNECTION_NORMAL) {
 			if ($fp) {
 				fclose($fp);
 			}
@@ -338,14 +338,14 @@ class AdvancedDownloader extends BaseDownloader {
 			}
 			die();
 		}
-		if($this->sleep == true || $tmpTime<=time()) {
+		if($this->sleep === true || $tmpTime<=time()) {
 			$transfer->transferredBytes = $this->transferred = $this->position-$this->start;
 			$transfer->onStatusChange($transfer,$this);
 			if ($tmpTime !== NULL) {
 				$tmpTime = time() + 1;
 			}
 		}
-		if ($this->sleep == true) {
+		if ($this->sleep === true) {
 			sleep(1);
 		}
 	}
@@ -355,7 +355,7 @@ class AdvancedDownloader extends BaseDownloader {
 	 * @return bool
 	 */
 	public function isInitialized() {
-		if ($this->end == 0) {
+		if ($this->end === 0) {
 			return false;
 		}
 		return true;

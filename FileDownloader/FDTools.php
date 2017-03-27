@@ -73,7 +73,7 @@ class FDTools extends Object {
 	 */
 	public static function getAvailableMemory() {
 		$mem = self::parsePHPIniMemoryValue(ini_get('memory_limit'));
-		if ($mem == 0) {
+		if ($mem === 0) {
 			return null;
 		}
 		return $mem-memory_get_usage();
@@ -271,7 +271,7 @@ class FDTools extends Object {
 			}
 			echo fread($fp, $buffer);
 			flush();
-			if ($sleep == true) {
+			if ($sleep === true) {
 				sleep(1);
 			}
 		}
