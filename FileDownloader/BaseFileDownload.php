@@ -539,7 +539,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param Session $session HTTP Session (this is needed to be able to close it
 	 * @throws Exception
 	 */
-	public function download(IDownloader $downloader = null, Request $request, Response $response, Session $session) {
+	public function download(IDownloader $inputDownloader = null, Request $request, Response $response, Session $session) {
 
 		if($session->isStarted()) {
 			$session->close();
@@ -551,10 +551,10 @@ abstract class BaseFileDownload extends Object {
 			$this->enableBrowserCache = false;
 		}
 
-		if ($downloader === null) {
+		if ($inputDownloader === null) {
 			$downloaders = self::getFileDownloaders();
 		} else {
-			$downloaders = array($downloader);
+			$downloaders = array($inputDownloader);
 		}
 
 		if (count($downloaders) <= 0) {
