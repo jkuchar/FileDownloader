@@ -479,7 +479,7 @@ abstract class BaseFileDownload extends Object {
 		}
 
 		$mime = "";
-		if (extension_loaded('fileinfo') and function_exists('finfo_open')) {
+		if (extension_loaded('fileinfo') && function_exists('finfo_open')) {
 			//TODO: test this code:
 			if ($finfo = @finfo_open(FILEINFO_MIME)) {
 				$mime = @finfo_file($finfo, $this->sourceFile);
@@ -545,7 +545,7 @@ abstract class BaseFileDownload extends Object {
 			$session->close();
 		}
 
-		if($this->getContentDisposition() == 'inline' AND $this->enableBrowserCache === NULL) {
+		if($this->getContentDisposition() == 'inline' && $this->enableBrowserCache === NULL) {
 			$this->enableBrowserCache = true;
 		}else{
 			$this->enableBrowserCache = false;
@@ -566,7 +566,7 @@ abstract class BaseFileDownload extends Object {
 		$lastException = null;
 
 		foreach($downloaders AS $downloader) {
-			if($downloader instanceof IDownloader and $downloader->isCompatible($this)) {
+			if($downloader instanceof IDownloader && $downloader->isCompatible($this)) {
 				try {
 					FDTools::clearHeaders($response); // Delete all headers
 					$this->transferredBytes = 0;

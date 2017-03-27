@@ -190,7 +190,7 @@ class AdvancedDownloader extends BaseDownloader {
 
 		$buffer = FDTools::$readFileBuffer;
 		$sleep = false;
-		if(is_int($transfer->speedLimit) and $transfer->speedLimit>0) {
+		if(is_int($transfer->speedLimit) && $transfer->speedLimit>0) {
 			$sleep  = true;
 			$buffer = (int)round($transfer->speedLimit);
 		}
@@ -338,7 +338,7 @@ class AdvancedDownloader extends BaseDownloader {
 			}
 			die();
 		}
-		if($this->sleep == true OR $tmpTime<=time()) {
+		if($this->sleep == true || $tmpTime<=time()) {
 			$transfer->transferredBytes = $this->transferred = $this->position-$this->start;
 			$transfer->onStatusChange($transfer,$this);
 			if ($tmpTime !== NULL) {

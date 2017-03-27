@@ -175,7 +175,7 @@ class FDTools extends Object {
 	public static function getContentDispositionHeaderData(Request $request, $basename) {
 		$basename = basename($basename);
 		$userAgent = $request->getHeader('User-Agent');
-		if ($userAgent AND strstr($userAgent, 'MSIE')) {
+		if ($userAgent && strstr($userAgent, 'MSIE')) {
 			// workaround for IE filename bug with multiple periods / multiple dots in filename
 			// that adds square brackets to filename - eg. setup.abc.exe becomes setup[1].abc.exe
 			$iefilename = preg_replace('/\./', '%2e', $basename, substr_count($basename, '.') - 1);
@@ -197,7 +197,7 @@ class FDTools extends Object {
 		$errors = array(
 			416=> 'Requested Range not satisfiable'
 		);
-		if ($message === null and isset($errors[$code])) {
+		if ($message === null && isset($errors[$code])) {
 			$message = $errors[$code];
 		}
 		$response->setCode($code);
@@ -243,7 +243,7 @@ class FDTools extends Object {
 	public static function readFile($location,$start=0,$end=null,$speedLimit=0) {
 		$buffer = self::$readFileBuffer;
 		$sleep = false;
-		if(is_int($speedLimit) and $speedLimit>0) {
+		if(is_int($speedLimit) && $speedLimit>0) {
 			$sleep  = true;
 			$buffer = (int)round($speedLimit);
 		}
