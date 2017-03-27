@@ -55,7 +55,7 @@ interface IDownloader {
 	 * @param Response $response HTTP response
 	 * @param BaseFileDownload|FileDownload $file
 	 */
-	function download(Request $request, Response $response, BaseFileDownload $file);
+	public function download(Request $request, Response $response, BaseFileDownload $file);
 
 
 	/**
@@ -63,7 +63,7 @@ interface IDownloader {
 	 * @param BaseFileDownload|FileDownload $file
 	 * @return bool TRUE if is compatible; FALSE if not
 	 */
-	function isCompatible(BaseFileDownload $file);
+	public function isCompatible(BaseFileDownload $file);
 }
 
 

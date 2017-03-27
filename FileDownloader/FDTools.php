@@ -71,7 +71,7 @@ class FDTools extends Object {
 	 * Returns available memery in bytes or NULL when no limit it set
 	 * @return int|null
 	 */
-	static function getAvailableMemory() {
+	public static function getAvailableMemory() {
 		$mem = self::parsePHPIniMemoryValue(ini_get("memory_limit"));
 		if ($mem == 0) {
 			return null;
@@ -84,12 +84,12 @@ class FDTools extends Object {
 	 * @param string $phpIniValueStr
 	 * @return int
 	 */
-	static function parsePHPIniMemoryValue($phpIniValueStr) {
+	public static function parsePHPIniMemoryValue($phpIniValueStr) {
 		$phpIniValueInt = (int)$phpIniValueStr;
 		if ($phpIniValueInt <= 0) {
 			return 0;
 		}
-		switch (substr($phpIniValueStr, -1, 1)) {
+		switch ($phpIniValueStr[strlen($phpIniValueStr) - 1]) {
 			case "K":
 				$phpIniValueInt *= self::KILOBYTE;
 				break;
@@ -114,7 +114,7 @@ class FDTools extends Object {
 	 * @param IResponse $res
 	 * @return IResponse
 	 */
-	static function clearHeaders(IResponse $res,$setContentType=false) {
+	public static function clearHeaders(IResponse $res, $setContentType=false) {
 		$res->setCode(IResponse::S200_OK);
 		foreach($res->getHeaders() AS $key => $val) {
 			$res->setHeader($key, null);
@@ -130,7 +130,7 @@ class FDTools extends Object {
 	 * @param int $time     Time limit
 	 * @return bool
 	 */
-	static function setTimeLimit($time=0) {
+	public static function setTimeLimit($time=0) {
 		if (!function_exists("ini_get")) {
 			throw new InvalidStateException("Function ini_get must be allowed.");
 		}
@@ -158,7 +158,7 @@ class FDTools extends Object {
 	 * @param string $location    Location to source file
 	 * @return string             ETag
 	 */
-	static function getETag($location) {
+	public static function getETag($location) {
 		return "\"" . md5($location . filemtime($location) . self::filesize($location)) . "\"";
 	}
 
@@ -172,7 +172,7 @@ class FDTools extends Object {
 	 * @param string $basename Path to file or filename
 	 * @return string
 	 */
-	static function getContentDispositionHeaderData(Request $request, $basename) {
+	public static function getContentDispositionHeaderData(Request $request, $basename) {
 		$basename = basename($basename);
 		$userAgent = $request->getHeader("User-Agent");
 		if ($userAgent AND strstr($userAgent, "MSIE")) {
@@ -193,7 +193,7 @@ class FDTools extends Object {
 	 * @param int $code HTTP code
 	 * @param string $message HTTP status
 	 */
-	static function _HTTPError(Response $response, $code, $message=null) {
+	public static function _HTTPError(Response $response, $code, $message=null) {
 		$errors = array(
 			416=>"Requested Range not satisfiable"
 		);
@@ -210,7 +210,7 @@ class FDTools extends Object {
 	 * @param string $mime      Mime-type
 	 * @return bool
 	 */
-	static function isValidMimeType($mime) {
+	public static function isValidMimeType($mime) {
 		$mime = (string)$mime;
 		// Thanks to Matúš Matula: http://forum.nette.org/cs/1952-addon-file-downloader-file-downloader?p=2#p61785
 		// return preg_match('#^[-\w]+/[-\w\+]+$#i', $mime); // simple check

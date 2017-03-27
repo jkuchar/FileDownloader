@@ -79,7 +79,7 @@ class AppFileDownload extends BaseFileDownload implements IResponse2 {
 	/**
 	 * @param Component $parent
 	 */
-	function  __construct(Component $parent) {
+	public function __construct(Component $parent) {
 		parent::__construct();
 		$this->setParent($parent);
 	}
@@ -89,7 +89,7 @@ class AppFileDownload extends BaseFileDownload implements IResponse2 {
 	 * @param Component $parent
 	 * @return AppFileDownload
 	 */
-	function setParent(Component $parent) {
+	public function setParent(Component $parent) {
 		$this->parent = $parent;
 		return $this;
 	}
@@ -98,14 +98,14 @@ class AppFileDownload extends BaseFileDownload implements IResponse2 {
 	 * Getts AppFileDownload parent
 	 * @return Component
 	 */
-	function getParent() {
+	public function getParent() {
 		return $this->parent;
 	}
 
 	/**
 	 * Implementation of IPresenterResponse::send()
 	 */
-	function send(IRequest $httpRequest, IResponse $httpResponse) {
+	public function send(IRequest $httpRequest, IResponse $httpResponse) {
 		parent::download($this->downloader);
 	}
 
@@ -113,7 +113,7 @@ class AppFileDownload extends BaseFileDownload implements IResponse2 {
 	 * Start download of the file!
 	 * @param IDownloader $downloader
 	 */
-	function download(IDownloader $downloader = null) {
+	public function download(IDownloader $downloader = null) {
 		$this->downloader = $downloader;
 
 		// Call sendResponse on presenter (used since 2.0 instead of terminate)

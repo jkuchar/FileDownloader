@@ -202,7 +202,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param callback $callback Callback
 	 * @return BaseFileDownload
 	 */
-	function addBeforeDownloaderStartsCallback($callback) {
+	public function addBeforeDownloaderStartsCallback($callback) {
 		return $this->addCallback(__METHOD__, $callback);
 	}
 
@@ -220,7 +220,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param callback $callback Callback
 	 * @return BaseFileDownload
 	 */
-	function addBeforeOutputStartsCallback($callback) {
+	public function addBeforeOutputStartsCallback($callback) {
 		return $this->addCallback(__METHOD__, $callback);
 	}
 
@@ -238,7 +238,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param callback $callback Callback
 	 * @return BaseFileDownload
 	 */
-	function addStatusChangeCallback($callback) {
+	public function addStatusChangeCallback($callback) {
 		return $this->addCallback(__METHOD__, $callback);
 	}
 
@@ -255,7 +255,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param callback $callback Callback
 	 * @return BaseFileDownload
 	 */
-	function addCompleteCallback($callback) {
+	public function addCompleteCallback($callback) {
 		return $this->addCallback(__METHOD__, $callback);
 	}
 
@@ -275,7 +275,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param callback $callback Callback
 	 * @return BaseFileDownload
 	 */
-	function addTransferContinueCallback($callback) {
+	public function addTransferContinueCallback($callback) {
 		return $this->addCallback(__METHOD__, $callback);
 	}
 
@@ -294,7 +294,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param callback $callback Callback
 	 * @return BaseFileDownload
 	 */
-	function addNewTransferStartCallback($callback) {
+	public function addNewTransferStartCallback($callback) {
 		return $this->addCallback(__METHOD__, $callback);
 	}
 
@@ -312,7 +312,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param callback $callback Callback
 	 * @return BaseFileDownload
 	 */
-	function addAbortCallback($callback) {
+	public function addAbortCallback($callback) {
 		return $this->addCallback(__METHOD__, $callback);
 	}
 
@@ -330,7 +330,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param callback $callback Callback
 	 * @return BaseFileDownload
 	 */
-	function addConnectionLostCallback($callback) {
+	public function addConnectionLostCallback($callback) {
 		return $this->addCallback(__METHOD__, $callback);
 	}
 
@@ -348,7 +348,7 @@ abstract class BaseFileDownload extends Object {
 		return $this;
 	}
 
-	function  __construct() {
+	public function  __construct() {
 		$this->vTransferID = time()."-".rand();
 		foreach(self::$defaults AS $key => $val) {
 			$this->$key = $val;
@@ -368,7 +368,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param string $location Location of the source file
 	 * @return BaseFileDownload
 	 */
-	function setSourceFile($location) {
+	public function setSourceFile($location) {
 		if($location === null) {
 			$this->vSourceFile = null;
 		}else {
@@ -388,7 +388,7 @@ abstract class BaseFileDownload extends Object {
 	 * Getts location of the source file
 	 * @return BaseFileDownload
 	 */
-	function getSourceFile() {
+	public function getSourceFile() {
 		if ($this->vSourceFile === null) {
 			throw new InvalidStateException("Location is not set!");
 		}
@@ -400,7 +400,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param string $disposition
 	 * @return BaseFileDownload
 	 */
-	function setContentDisposition($disposition) {
+	public function setContentDisposition($disposition) {
 		$values = array("inline","attachment");
 		if (!in_array($disposition, $values)) {
 			throw new InvalidArgumentException("Content disposition must be one of these: " . implode(",", $values));
@@ -413,7 +413,7 @@ abstract class BaseFileDownload extends Object {
 	 * Getts content disposition
 	 * @return string
 	 */
-	function getContentDisposition() {
+	public function getContentDisposition() {
 		return $this->vContentDisposition;
 	}
 
@@ -421,7 +421,7 @@ abstract class BaseFileDownload extends Object {
 	 * Getts send as name
 	 * @return string
 	 */
-	function getTransferFileName() {
+	public function getTransferFileName() {
 		return $this->vTransferFileName;
 	}
 
@@ -430,7 +430,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param string $sendAs
 	 * @return BaseFileDownload
 	 */
-	function setTransferFileName($name) {
+	public function setTransferFileName($name) {
 		$this->vTransferFileName = pathinfo($name, PATHINFO_BASENAME);
 		return $this;
 	}
@@ -441,7 +441,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param int $speed Speed limit
 	 * @return BaseFileDownload
 	 */
-	function setSpeedLimit($speed) {
+	public function setSpeedLimit($speed) {
 		if (!is_int($speed)) {
 			throw new InvalidArgumentException("Max download speed must be integer!");
 		}
@@ -463,7 +463,7 @@ abstract class BaseFileDownload extends Object {
 	 * Getts speed limit
 	 * @return int
 	 */
-	function getSpeedLimit() {
+	public function getSpeedLimit() {
 		return $this->vSpeedLimit;
 	}
 
@@ -539,7 +539,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param Session $session HTTP Session (this is needed to be able to close it
 	 * @throws Exception
 	 */
-	function download(IDownloader $downloader = null, Request $request, Response $response, Session $session) {
+	public function download(IDownloader $downloader = null, Request $request, Response $response, Session $session) {
 
 		if($session->isStarted()) {
 			$session->close();

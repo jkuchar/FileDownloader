@@ -65,7 +65,7 @@ class AdvancedDownloader extends BaseDownloader {
 	 * Check for environment configuration?
 	 * @var bool
 	 */
-	static $checkEnvironmentSettings = true;
+	public static $checkEnvironmentSettings = true;
 
 	public $size = 0;
 	public $start = 0;
@@ -87,7 +87,7 @@ class AdvancedDownloader extends BaseDownloader {
 	 */
 	protected $sleep;
 
-	function download(Request $request, Response $response, BaseFileDownload $transfer) {
+	public function download(Request $request, Response $response, BaseFileDownload $transfer) {
 		$this->currentTransfer = $transfer;
 		$this->sendStandardFileHeaders($request, $response, $transfer,$this);
 
@@ -353,7 +353,7 @@ class AdvancedDownloader extends BaseDownloader {
 	 * Is this downloader initialized?
 	 * @return bool
 	 */
-	function isInitialized() {
+	public function isInitialized() {
 		if ($this->end == 0) {
 			return false;
 		}
@@ -366,7 +366,7 @@ class AdvancedDownloader extends BaseDownloader {
 	 * @param BaseFileDownload $file
 	 * @return bool TRUE if is compatible; FALSE if not
 	 */
-	function isCompatible(BaseFileDownload $file) {
+	public function isCompatible(BaseFileDownload $file) {
 		if(self::$checkEnvironmentSettings === true) {
 			if (FDTools::setTimeLimit(0) !== true) {
 				return false;
