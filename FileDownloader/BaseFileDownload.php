@@ -161,13 +161,13 @@ abstract class BaseFileDownload extends Object {
 	 * Location of the file
 	 * @var string|null
 	 */
-	private $vSourceFile = null;
+	private $vSourceFile;
 
 	/**
 	 * Send as filename
 	 * @var string|null
 	 */
-	private $vTransferFileName = null;
+	private $vTransferFileName;
 
 	/**
 	 * Mimetype of file
@@ -175,13 +175,13 @@ abstract class BaseFileDownload extends Object {
 	 *
 	 * @var string|null
 	 */
-	private $vMimeType = null;
+	private $vMimeType;
 
 	/**
 	 * Enable browser cache
 	 * @var Bool|null to auto
 	 */
-	public $enableBrowserCache = null;
+	public $enableBrowserCache;
 
 	/**
 	 * How many bytes is sent
