@@ -40,6 +40,8 @@
 namespace FileDownloader\Downloader;
 
 use FileDownloader\BaseFileDownload;
+use Nette\Http\Request;
+use Nette\Http\Response;
 use Nette\InvalidStateException;
 
 /**
@@ -56,17 +58,17 @@ class NativePHPDownloader extends BaseDownloader {
 	 * Download file!
 	 * @param BaseFileDownload $file
 	 */
-	function download(BaseFileDownload $file) {
-		$this->sendStandardFileHeaders($file,$this);
-		$file->onBeforeOutputStarts($file,$this);
+	public function download(Request $request, Response $response, BaseFileDownload $file) {
+		$this->sendStandardFileHeaders($request, $response, $file, $this);
+		$file->onBeforeOutputStarts($file, $this);
 
 		// Bugfix: when output buffer active, there is a problem with memory
 		// @see http://www.php.net/manual/en/function.readfile.php#81032
-		while (@ob_end_flush()); // @see example at http://php.net/manual/en/function.ob-end-flush.php
+		while (@ob_end_flush()) {}; // @see example at http://php.net/manual/en/function.ob-end-flush.php
 		flush();
 
 		if(!@readfile($file->sourceFile)) {
-			throw new InvalidStateException("PHP readfile() function fails!");		}
+			throw new InvalidStateException('PHP readfile() function fails!');		}
 
 		// Or use this code? (from http://www.php.net/manual/en/function.readfile.php#50212)
 		//
@@ -81,7 +83,7 @@ class NativePHPDownloader extends BaseDownloader {
 	 * @param bool $isLast Is this last downloader in list?
 	 * @return bool TRUE if is compatible; FALSE if not
 	 */
-	function isCompatible(BaseFileDownload $file) {
+	public function isCompatible(BaseFileDownload $file) {
 		return true;
 	}
 }

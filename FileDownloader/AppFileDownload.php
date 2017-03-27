@@ -39,11 +39,11 @@
 
 namespace FileDownloader;
 
-use Nette\Application\IResponse as IResponse2;
-use Nette\Application\UI\Presenter;
-use Nette\ComponentModel\Component;
 use Nette\Http\IRequest;
 use Nette\Http\IResponse;
+use Nette\Http\Request;
+use Nette\Http\Response;
+use Nette\Http\Session;
 
 /**
  * @link http://filedownloader.projekty.mujserver.net
@@ -51,15 +51,8 @@ use Nette\Http\IResponse;
  * @author      Jan Kuchař
  * @copyright   Copyright (c) 2014 Jan Kuchar
  * @author      Jan Kuchař
- *
- * @property Component $parent Parent component
  */
-class AppFileDownload extends BaseFileDownload implements IResponse2 {
-	/**
-	 * Parent of this object
-	 * @var Component
-	 */
-	private $parent;
+class AppFileDownload extends BaseFileDownload implements \Nette\Application\IResponse {
 
 	/**
 	 * Downloader used to download file (optional)
@@ -68,63 +61,38 @@ class AppFileDownload extends BaseFileDownload implements IResponse2 {
 	private $downloader;
 
 	/**
-	 * Getts new instance of self
-	 * @param Component $parent
-	 * @return AppFileDownload
+	 * @var Request
 	 */
-	public static function getInstance(Component $parent) {
-		return new AppFileDownload($parent);
-	}
+	private $request;
 
 	/**
-	 * @param Component $parent
+	 * @var Response
 	 */
-	function  __construct(Component $parent) {
+	private $response;
+
+	/**
+	 * @var Session
+	 */
+	private $session;
+
+	public function __construct(Request $request, Response $response, Session $session) {
 		parent::__construct();
-		$this->setParent($parent);
+		$this->request = $request;
+		$this->response = $response;
+		$this->session = $session;
 	}
 
-	/**
-	 * Setts AppFileDownload parent
-	 * @param Component $parent
-	 * @return AppFileDownload
-	 */
-	function setParent(Component $parent) {
-		$this->parent = $parent;
-		return $this;
-	}
-
-	/**
-	 * Getts AppFileDownload parent
-	 * @return Component
-	 */
-	function getParent() {
-		return $this->parent;
-	}
-
-	/**
-	 * Implementation of IPresenterResponse::send()
-	 */
-	function send(IRequest $httpRequest, IResponse $httpResponse) {
-		parent::download($this->downloader);
-	}
-
-	/**
-	 * Start download of the file!
-	 * @param IDownloader $downloader
-	 */
-	function download(IDownloader $downloader = null) {
+	public function setDownloader(IDownloader $downloader) {
 		$this->downloader = $downloader;
+	}
 
-		// Call sendResponse on presenter (used since 2.0 instead of terminate)
-		if($this->parent instanceof Presenter) {
-			$presenter = $this->parent;
-		} else {
-			$presenter = $this->parent->lookup("Nette/Application/UI/Presenter",true);
-		}
+	/* Implementation of IPresenterResponse::send() */
+	public function send(IRequest $httpRequest, IResponse $httpResponse) {
+		parent::download($this->downloader, $this->request, $this->response, $this->session);
+	}
 
-		$presenter->sendResponse($this);
-
+	public function download(IDownloader $downloader = null, Request $request, Response $response, Session $session) {
+		throw new \LogicException('Use Presenter::sendResponse() to send response to client.');
 	}
 
 }

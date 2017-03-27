@@ -43,7 +43,9 @@ use Exception;
 use FileDownloader\Downloader\AdvancedDownloader;
 use FileDownloader\Downloader\NativePHPDownloader;
 use Nette\Application\BadRequestException;
-use Nette\Environment;
+use Nette\Http\Request;
+use Nette\Http\Response;
+use Nette\Http\Session;
 use Nette\InvalidArgumentException;
 use Nette\InvalidStateException;
 use Nette\Object;
@@ -75,6 +77,17 @@ use Nette\Object;
  * @property int $contentDisposition    Content disposition: inline or attachment
  * @property-read float $sourceFileSize   File size
  * @property-read int $transferID       TransferId
+ *
+ * Callbacks:
+ * @method void onBeforeDownloaderStarts(BaseFileDownload $fileDownload, IDownloader $downloader)
+ * @method void onBeforeOutputStarts(BaseFileDownload $fileDownload, IDownloader $downloader)
+ * @method void onStatusChange(BaseFileDownload $fileDownload, IDownloader $downloader)
+ * @method void onComplete(BaseFileDownload $fileDownload, IDownloader $downloader)
+ * @method void onTransferContinue(BaseFileDownload $fileDownload, IDownloader $downloader)
+ * @method void onNewTransferStart(BaseFileDownload $fileDownload, IDownloader $downloader)
+ * @method void onAbort(BaseFileDownload $fileDownload, IDownloader $downloader)
+ * @method void onConnectionLost(BaseFileDownload $fileDownload, IDownloader $downloader)
+
  */
 abstract class BaseFileDownload extends Object {
 	/**
@@ -88,12 +101,6 @@ abstract class BaseFileDownload extends Object {
 	 * @var array
 	 */
 	private static $fileDownloaders=array();
-
-	/**
-	 * Close session before start download? (if not, it will block session until file is transferred!)
-	 * @var bool
-	 */
-	public static $closeSession = true;
 
 	/**
 	 * Add file downlaoder
@@ -134,8 +141,8 @@ abstract class BaseFileDownload extends Object {
 	 */
 	private $vTransferID = -1;
 
-	const CONTENT_DISPOSITION_ATTACHMENT = "attachment";
-	const CONTENT_DISPOSITION_INLINE = "inline";
+	const CONTENT_DISPOSITION_ATTACHMENT = 'attachment';
+	const CONTENT_DISPOSITION_INLINE = 'inline';
 
 	/**
 	 * Content disposition: attachment / inline
@@ -154,13 +161,13 @@ abstract class BaseFileDownload extends Object {
 	 * Location of the file
 	 * @var string|null
 	 */
-	private $vSourceFile = null;
+	private $vSourceFile;
 
 	/**
 	 * Send as filename
 	 * @var string|null
 	 */
-	private $vTransferFileName = null;
+	private $vTransferFileName;
 
 	/**
 	 * Mimetype of file
@@ -168,13 +175,13 @@ abstract class BaseFileDownload extends Object {
 	 *
 	 * @var string|null
 	 */
-	private $vMimeType = null;
+	private $vMimeType;
 
 	/**
 	 * Enable browser cache
 	 * @var Bool|null to auto
 	 */
-	public $enableBrowserCache = null;
+	public $enableBrowserCache;
 
 	/**
 	 * How many bytes is sent
@@ -195,7 +202,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param callback $callback Callback
 	 * @return BaseFileDownload
 	 */
-	function addBeforeDownloaderStartsCallback($callback) {
+	public function addBeforeDownloaderStartsCallback($callback) {
 		return $this->addCallback(__METHOD__, $callback);
 	}
 
@@ -213,7 +220,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param callback $callback Callback
 	 * @return BaseFileDownload
 	 */
-	function addBeforeOutputStartsCallback($callback) {
+	public function addBeforeOutputStartsCallback($callback) {
 		return $this->addCallback(__METHOD__, $callback);
 	}
 
@@ -231,7 +238,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param callback $callback Callback
 	 * @return BaseFileDownload
 	 */
-	function addStatusChangeCallback($callback) {
+	public function addStatusChangeCallback($callback) {
 		return $this->addCallback(__METHOD__, $callback);
 	}
 
@@ -248,7 +255,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param callback $callback Callback
 	 * @return BaseFileDownload
 	 */
-	function addCompleteCallback($callback) {
+	public function addCompleteCallback($callback) {
 		return $this->addCallback(__METHOD__, $callback);
 	}
 
@@ -268,7 +275,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param callback $callback Callback
 	 * @return BaseFileDownload
 	 */
-	function addTransferContinueCallback($callback) {
+	public function addTransferContinueCallback($callback) {
 		return $this->addCallback(__METHOD__, $callback);
 	}
 
@@ -287,7 +294,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param callback $callback Callback
 	 * @return BaseFileDownload
 	 */
-	function addNewTransferStartCallback($callback) {
+	public function addNewTransferStartCallback($callback) {
 		return $this->addCallback(__METHOD__, $callback);
 	}
 
@@ -305,7 +312,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param callback $callback Callback
 	 * @return BaseFileDownload
 	 */
-	function addAbortCallback($callback) {
+	public function addAbortCallback($callback) {
 		return $this->addCallback(__METHOD__, $callback);
 	}
 
@@ -323,7 +330,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param callback $callback Callback
 	 * @return BaseFileDownload
 	 */
-	function addConnectionLostCallback($callback) {
+	public function addConnectionLostCallback($callback) {
 		return $this->addCallback(__METHOD__, $callback);
 	}
 
@@ -334,15 +341,15 @@ abstract class BaseFileDownload extends Object {
 	 * @return BaseFileDownload
 	 */
 	private function addCallback($fceName, $callback) {
-		preg_match("/^.*::add(.*)Callback$/", $fceName, $matches);
-		$varName = "on".$matches[1];
+		preg_match('/^.*::add(.*)Callback$/', $fceName, $matches);
+		$varName = 'on' .$matches[1];
 		$var = &$this->$varName;
 		$var[] = $callback;
 		return $this;
 	}
 
-	function  __construct() {
-		$this->vTransferID = time()."-".rand();
+	public function  __construct() {
+		$this->vTransferID = time(). '-' .mt_rand();
 		foreach(self::$defaults AS $key => $val) {
 			$this->$key = $val;
 		}
@@ -361,7 +368,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param string $location Location of the source file
 	 * @return BaseFileDownload
 	 */
-	function setSourceFile($location) {
+	public function setSourceFile($location) {
 		if($location === null) {
 			$this->vSourceFile = null;
 		}else {
@@ -369,7 +376,7 @@ abstract class BaseFileDownload extends Object {
 				throw new BadRequestException("File not found at '" . $location . "'!");
 			}
 			if (!is_readable($location)) {
-				throw new InvalidStateException("File is NOT readable!");
+				throw new InvalidStateException('File is NOT readable!');
 			}
 			$this->transferFileName = pathinfo($location, PATHINFO_BASENAME);
 			$this->vSourceFile = realpath($location);
@@ -379,11 +386,11 @@ abstract class BaseFileDownload extends Object {
 
 	/**
 	 * Getts location of the source file
-	 * @return BaseFileDownload
+	 * @return string
 	 */
-	function getSourceFile() {
+	public function getSourceFile() {
 		if ($this->vSourceFile === null) {
-			throw new InvalidStateException("Location is not set!");
+			throw new InvalidStateException('Location is not set!');
 		}
 		return $this->vSourceFile;
 	}
@@ -393,10 +400,10 @@ abstract class BaseFileDownload extends Object {
 	 * @param string $disposition
 	 * @return BaseFileDownload
 	 */
-	function setContentDisposition($disposition) {
-		$values = array("inline","attachment");
-		if (!in_array($disposition, $values)) {
-			throw new InvalidArgumentException("Content disposition must be one of these: " . implode(",", $values));
+	public function setContentDisposition($disposition) {
+		$values = array('inline', 'attachment');
+		if (!in_array($disposition, $values, TRUE)) {
+			throw new InvalidArgumentException('Content disposition must be one of these: ' . implode(',', $values));
 		}
 		$this->vContentDisposition = $disposition;
 		return $this;
@@ -406,7 +413,7 @@ abstract class BaseFileDownload extends Object {
 	 * Getts content disposition
 	 * @return string
 	 */
-	function getContentDisposition() {
+	public function getContentDisposition() {
 		return $this->vContentDisposition;
 	}
 
@@ -414,7 +421,7 @@ abstract class BaseFileDownload extends Object {
 	 * Getts send as name
 	 * @return string
 	 */
-	function getTransferFileName() {
+	public function getTransferFileName() {
 		return $this->vTransferFileName;
 	}
 
@@ -423,7 +430,7 @@ abstract class BaseFileDownload extends Object {
 	 * @param string $sendAs
 	 * @return BaseFileDownload
 	 */
-	function setTransferFileName($name) {
+	public function setTransferFileName($name) {
 		$this->vTransferFileName = pathinfo($name, PATHINFO_BASENAME);
 		return $this;
 	}
@@ -434,9 +441,9 @@ abstract class BaseFileDownload extends Object {
 	 * @param int $speed Speed limit
 	 * @return BaseFileDownload
 	 */
-	function setSpeedLimit($speed) {
+	public function setSpeedLimit($speed) {
 		if (!is_int($speed)) {
-			throw new InvalidArgumentException("Max download speed must be integer!");
+			throw new InvalidArgumentException('Max download speed must be integer!');
 		}
 		if ($speed < 0) {
 			throw new InvalidArgumentException("Max download speed can't be smaller than zero!");
@@ -445,7 +452,7 @@ abstract class BaseFileDownload extends Object {
 		if ($availableMem) {
 			$availableMemWithReserve = ($availableMem-100*1024);
 			if ($speed > $availableMemWithReserve) {
-				throw new InvalidArgumentException("Max download speed can't be a bigger than available memory " . $availableMemWithReserve . "b!");
+				throw new InvalidArgumentException("Max download speed can't be a bigger than available memory " . $availableMemWithReserve . 'b!');
 			}
 		}
 		$this->vSpeedLimit = (int)round($speed);
@@ -456,7 +463,7 @@ abstract class BaseFileDownload extends Object {
 	 * Getts speed limit
 	 * @return int
 	 */
-	function getSpeedLimit() {
+	public function getSpeedLimit() {
 		return $this->vSpeedLimit;
 	}
 
@@ -472,7 +479,7 @@ abstract class BaseFileDownload extends Object {
 		}
 
 		$mime = "";
-		if (extension_loaded('fileinfo') and function_exists("finfo_open")) {
+		if (extension_loaded('fileinfo') && function_exists('finfo_open')) {
 			//TODO: test this code:
 			if ($finfo = @finfo_open(FILEINFO_MIME)) {
 				$mime = @finfo_file($finfo, $this->sourceFile);
@@ -483,7 +490,7 @@ abstract class BaseFileDownload extends Object {
 			}
 		}
 
-		if(function_exists("mime_content_type")) {
+		if(function_exists('mime_content_type')) {
 			$mime = mime_content_type($this->sourceFile);
 			if (FDTools::isValidMimeType($mime)) {
 				return $mime;
@@ -491,21 +498,17 @@ abstract class BaseFileDownload extends Object {
 		}
 
 		// By file extension from ini file
-		$cache = Environment::getCache("FileDownloader");
-		if (!IsSet($cache["mime-types"])) {
-			$cache["mime-types"] = parse_ini_file(dirname(__FILE__) . DIRECTORY_SEPARATOR . "mime.ini");
-		}
-		$mimetypes = $cache["mime-types"];
+		$mimeTypes = parse_ini_file(__DIR__ . DIRECTORY_SEPARATOR . 'mime.ini');
 
 		$extension = pathinfo($this->sourceFile, PATHINFO_EXTENSION);
-		if (array_key_exists($extension, $mimetypes)) {
-			$mime = $mimetypes[$extension];
+		if (array_key_exists($extension, $mimeTypes)) {
+			$mime = $mimeTypes[$extension];
 		}
 
 		if (FDTools::isValidMimeType($mime)) {
 			return $mime;
 		} else {
-			return "application/octet-stream";
+			return 'application/octet-stream';
 		}
 	}
 
@@ -527,35 +530,35 @@ abstract class BaseFileDownload extends Object {
 		return FDTools::filesize($this->sourceFile);
 	}
 
+
 	/**
 	 * Download the file!
 	 * @param IDownloader $downloader
+	 * @param Request $request HTTP request
+	 * @param Response $response HTTP response
+	 * @param Session $session HTTP Session (this is needed to be able to close it
+	 * @throws Exception
 	 */
-	function download(IDownloader $downloader = null) {
-		$req = Environment::getHttpRequest();
-		$res = Environment::getHttpResponse();
+	public function download(IDownloader $inputDownloader = null, Request $request, Response $response, Session $session) {
 
-		if(self::$closeSession) {
-			$ses = Environment::getSession();
-			if($ses->isStarted()) {
-				$ses->close();
-			}
+		if($session->isStarted()) {
+			$session->close();
 		}
 
-		if($this->getContentDisposition() == "inline" AND is_null($this->enableBrowserCache)) {
+		if($this->enableBrowserCache === NULL && $this->getContentDisposition() === 'inline') {
 			$this->enableBrowserCache = true;
 		}else{
 			$this->enableBrowserCache = false;
 		}
 
-		if ($downloader === null) {
+		if ($inputDownloader === null) {
 			$downloaders = self::getFileDownloaders();
 		} else {
-			$downloaders = array($downloader);
+			$downloaders = array($inputDownloader);
 		}
 
 		if (count($downloaders) <= 0) {
-			throw new InvalidStateException("There is no registred downloader!");
+			throw new InvalidStateException('There is no registred downloader!');
 		}
 
 		krsort($downloaders);
@@ -563,23 +566,23 @@ abstract class BaseFileDownload extends Object {
 		$lastException = null;
 
 		foreach($downloaders AS $downloader) {
-			if($downloader instanceof IDownloader and $downloader->isCompatible($this)) {
+			if($downloader instanceof IDownloader && $downloader->isCompatible($this)) {
 				try {
-					FDTools::clearHeaders($res); // Delete all headers
+					FDTools::clearHeaders($response); // Delete all headers
 					$this->transferredBytes = 0;
 					$this->onBeforeDownloaderStarts($this,$downloader);
-					$downloader->download($this); // Start download
+					$downloader->download($request, $response, $this); // Start download
 					$this->onComplete($this,$downloader);
 					die(); // If all gone ok -> die
 				} catch (FDSkypeMeException $e) {
-					if($res->isSent()) {
+					if($response->isSent()) {
 						throw new InvalidStateException("Headers are already sent! Can't skip downloader.");
 					} else {
 						continue;
 					}
 				} catch (Exception $e) {
-					if(!$res->isSent())
-						FDTools::clearHeaders($res);
+					if(!$response->isSent())
+						FDTools::clearHeaders($response);
 					throw $e;
 				}
 			}
@@ -587,15 +590,15 @@ abstract class BaseFileDownload extends Object {
 
 		// Pokud se soubor nějakým způsobem odešle - toto už se nespustí
 		if($lastException instanceof Exception) {
-			FDTools::clearHeaders(Environment::getHttpResponse(),TRUE);
+			FDTools::clearHeaders($response,TRUE);
 			throw $lastException;
 		}
 
-		if($req->getHeader("Range"))
-			FDTools::_HTTPError(416); // Požadavek na range
+		if($request->getHeader('Range'))
+			FDTools::_HTTPError($response, 416); // Požadavek na range
 		else
-			$res->setCode(500);
-		throw new InvalidStateException("There is no compatible downloader (all downloader returns downloader->isComplatible()=false or was skipped)!");
+			$response->setCode(500);
+		throw new InvalidStateException('There is no compatible downloader (all downloader returns downloader->isComplatible()=false or was skipped)!');
 	}
 }
 

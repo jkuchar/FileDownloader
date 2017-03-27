@@ -39,8 +39,9 @@
 namespace FileDownloader;
 
 use BigFileTools;
-use Nette\Environment;
 use Nette\Http\IResponse;
+use Nette\Http\Request;
+use Nette\Http\Response;
 use Nette\InvalidArgumentException;
 use Nette\InvalidStateException;
 use Nette\Object;
@@ -70,9 +71,9 @@ class FDTools extends Object {
 	 * Returns available memery in bytes or NULL when no limit it set
 	 * @return int|null
 	 */
-	static function getAvailableMemory() {
-		$mem = self::parsePHPIniMemoryValue(ini_get("memory_limit"));
-		if ($mem == 0) {
+	public static function getAvailableMemory() {
+		$mem = self::parsePHPIniMemoryValue(ini_get('memory_limit'));
+		if ($mem === 0) {
 			return null;
 		}
 		return $mem-memory_get_usage();
@@ -83,23 +84,23 @@ class FDTools extends Object {
 	 * @param string $phpIniValueStr
 	 * @return int
 	 */
-	static function parsePHPIniMemoryValue($phpIniValueStr) {
+	public static function parsePHPIniMemoryValue($phpIniValueStr) {
 		$phpIniValueInt = (int)$phpIniValueStr;
 		if ($phpIniValueInt <= 0) {
 			return 0;
 		}
-		switch (substr($phpIniValueStr, -1, 1)) {
-			case "K":
+		switch ($phpIniValueStr[strlen($phpIniValueStr) - 1]) {
+			case 'K':
 				$phpIniValueInt *= self::KILOBYTE;
 				break;
-			case "M":
+			case 'M':
 				$phpIniValueInt *= self::MEGABYTE;
 				;
 				break;
-			case "G":
+			case 'G':
 				$phpIniValueInt *= self::GYGABYTE;
 				break;
-			case "T":
+			case 'T':
 				$phpIniValueInt *= self::TERABYTE;
 				break;
 			default:
@@ -113,13 +114,13 @@ class FDTools extends Object {
 	 * @param IResponse $res
 	 * @return IResponse
 	 */
-	static function clearHeaders(IResponse $res,$setContentType=false) {
+	public static function clearHeaders(IResponse $res, $setContentType=false) {
 		$res->setCode(IResponse::S200_OK);
 		foreach($res->getHeaders() AS $key => $val) {
 			$res->setHeader($key, null);
 		}
 		if ($setContentType === true) {
-			$res->setContentType("text/html", "UTF-8");
+			$res->setContentType('text/html', 'UTF-8');
 		}
 		return $res;
 	}
@@ -129,22 +130,22 @@ class FDTools extends Object {
 	 * @param int $time     Time limit
 	 * @return bool
 	 */
-	static function setTimeLimit($time=0) {
-		if (!function_exists("ini_get")) {
-			throw new InvalidStateException("Function ini_get must be allowed.");
+	public static function setTimeLimit($time=0) {
+		if (!function_exists('ini_get')) {
+			throw new InvalidStateException('Function ini_get must be allowed.');
 		}
 
-		if ((int) @ini_get("max_execution_time") === $time) {
+		if ((int) @ini_get('max_execution_time') === $time) {
 			return true;
 		}
 
-		if (function_exists("set_time_limit")) {
+		if (function_exists('set_time_limit')) {
 			@set_time_limit($time);
-		} elseif (function_exists("ini_set")) {
-			@ini_set("max_execution_time", $time);
+		} elseif (function_exists('ini_set')) {
+			@ini_set('max_execution_time', $time);
 		}
 
-		if ((int) @ini_get("max_execution_time") === $time) {
+		if ((int) @ini_get('max_execution_time') === $time) {
 			return true;
 		}
 
@@ -157,23 +158,24 @@ class FDTools extends Object {
 	 * @param string $location    Location to source file
 	 * @return string             ETag
 	 */
-	static function getETag($location) {
-		return "\"" . md5($location . filemtime($location) . self::filesize($location)) . "\"";
+	public static function getETag($location) {
+		return '"' . md5($location . filemtime($location) . self::filesize($location)) . '"';
 	}
+
 
 	/**
 	 * Returns filename (but if IE fix the bug)
 	 *
 	 * @link http://cz2.php.net/manual/en/function.fpassthru.php#25801
 	 * @author Unknown
+	 * @param Request $request HTTP request
 	 * @param string $basename Path to file or filename
 	 * @return string
 	 */
-	static function getContentDispositionHeaderData($basename) {
+	public static function getContentDispositionHeaderData(Request $request, $basename) {
 		$basename = basename($basename);
-		$req = Environment::getHttpRequest();
-		$userAgent = $req->getHeader("User-Agent");
-		if ($userAgent AND strstr($userAgent, "MSIE")) {
+		$userAgent = $request->getHeader('User-Agent');
+		if ($userAgent && strstr($userAgent, 'MSIE')) {
 			// workaround for IE filename bug with multiple periods / multiple dots in filename
 			// that adds square brackets to filename - eg. setup.abc.exe becomes setup[1].abc.exe
 			$iefilename = preg_replace('/\./', '%2e', $basename, substr_count($basename, '.') - 1);
@@ -182,24 +184,25 @@ class FDTools extends Object {
 		return $basename;
 	}
 
+
 	/**
 	 * Sends http error to client
 	 *
 	 * @author Jan Kuchař
-	 * @param int $code       HTTP code
+	 * @param Response $response
+	 * @param int $code HTTP code
 	 * @param string $message HTTP status
 	 */
-	static function _HTTPError($code,$message=null) {
+	public static function _HTTPError(Response $response, $code, $message=null) {
 		$errors = array(
-			416=>"Requested Range not satisfiable"
+			416=> 'Requested Range not satisfiable'
 		);
-		if ($message === null and isset($errors[$code])) {
+		if ($message === null && isset($errors[$code])) {
 			$message = $errors[$code];
 		}
-		$res = Environment::getHttpResponse();
-		$res->setCode($code);
-		$res->setContentType("plain/text","UTF-8");
-		die("<html><body><h1>HTTP Error ".$code." - ".$message."</h1><p>".$message."</p></body></html>");
+		$response->setCode($code);
+		$response->setContentType('plain/text', 'UTF-8');
+		die('<html><body><h1>HTTP Error ' .$code. ' - ' .$message. '</h1><p>' .$message. '</p></body></html>');
 	}
 
 	/**
@@ -207,7 +210,7 @@ class FDTools extends Object {
 	 * @param string $mime      Mime-type
 	 * @return bool
 	 */
-	static function isValidMimeType($mime) {
+	public static function isValidMimeType($mime) {
 		$mime = (string)$mime;
 		// Thanks to Matúš Matula: http://forum.nette.org/cs/1952-addon-file-downloader-file-downloader?p=2#p61785
 		// return preg_match('#^[-\w]+/[-\w\+]+$#i', $mime); // simple check
@@ -240,19 +243,19 @@ class FDTools extends Object {
 	public static function readFile($location,$start=0,$end=null,$speedLimit=0) {
 		$buffer = self::$readFileBuffer;
 		$sleep = false;
-		if(is_int($speedLimit) and $speedLimit>0) {
+		if(is_int($speedLimit) && $speedLimit>0) {
 			$sleep  = true;
 			$buffer = (int)round($speedLimit);
 		}
 		if ($buffer < 1) {
-			throw new InvalidArgumentException("Buffer must be bigger than zero!");
+			throw new InvalidArgumentException('Buffer must be bigger than zero!');
 		}
 		$availableMem = self::getAvailableMemory();
 		if ($availableMem && $buffer > ($availableMem * 0.9)) {
-			throw new InvalidArgumentException("Buffer is too big! (bigger than available memory)");
+			throw new InvalidArgumentException('Buffer is too big! (bigger than available memory)');
 		}
 
-		$fp = fopen($location,"rb");
+		$fp = fopen($location, 'rb');
 		if (!$fp) {
 			throw new InvalidStateException("Can't open file for reading!");
 		}
@@ -268,7 +271,7 @@ class FDTools extends Object {
 			}
 			echo fread($fp, $buffer);
 			flush();
-			if ($sleep == true) {
+			if ($sleep === true) {
 				sleep(1);
 			}
 		}

@@ -41,7 +41,7 @@ namespace FileDownloader\Downloader;
 use FileDownloader\BaseFileDownload;
 use FileDownloader\FDTools;
 use FileDownloader\IDownloader;
-use Nette\Environment;
+use Nette\Http\Request;
 use Nette\Http\Response;
 use Nette\Object;
 
@@ -54,54 +54,51 @@ use Nette\Object;
  * @author      Jan Kuchař
  */
 abstract class BaseDownloader extends Object implements IDownloader {
-
 	/**
 	 * Sends a standard headers for file download
-	 * @param BaseFileDownload $file            File
-	 * @param BaseDownloader $downloader    Downloader of the file
+	 * @param Request $request
+	 * @param Response $rCesponse
+	 * @param BaseFileDownload $file File
+	 * @param BaseDownloader $downloader Downloader of the file
 	 */
-	protected function sendStandardFileHeaders(BaseFileDownload $file, BaseDownloader $downloader=null) {
-		$res = Environment::getHttpResponse();
-		$req = Environment::getHttpRequest();
+	protected function sendStandardFileHeaders(Request $request, Response $response, BaseFileDownload $file, BaseDownloader $downloader=null) {
 		//FDTools::clearHeaders($res); // Voláno už v FileDownload.php
 
-		$res->setContentType($file->mimeType, "UTF-8");
-		$res->setHeader("X-File-Downloader", "File Downloader (http://filedownloader.projekty.mujserver.net)");
+		$response->setContentType($file->mimeType, 'UTF-8');
+		$response->setHeader('X-File-Downloader', 'File Downloader (http://filedownloader.projekty.mujserver.net)');
 		if ($downloader !== null) {
-			$res->setHeader("X-FileDownloader-Actual-Script", $downloader->getReflection()->name);
+			$response->setHeader('X-FileDownloader-Actual-Script', $downloader->getReflection()->name);
 		}
 
-		$res->setHeader('Pragma', 'public'); // Fix for IE - Content-Disposition
-		$res->setHeader('Content-Disposition', $file->getContentDisposition() . '; filename="' . FDTools::getContentDispositionHeaderData($file->transferFileName) . '"');
-		$res->setHeader('Content-Description', 'File Transfer');
-		$res->setHeader('Content-Transfer-Encoding', 'binary');
-		$res->setHeader('Connection', 'close');
-		$res->setHeader('ETag', FDTools::getETag($file->sourceFile));
-		$res->setHeader('Content-Length', FDTools::filesize($file->sourceFile));
+		$response->setHeader('Pragma', 'public'); // Fix for IE - Content-Disposition
+		$response->setHeader('Content-Disposition', $file->getContentDisposition() . '; filename="' . FDTools::getContentDispositionHeaderData($request, $file->transferFileName) . '"');
+		$response->setHeader('Content-Description', 'File Transfer');
+		$response->setHeader('Content-Transfer-Encoding', 'binary');
+		$response->setHeader('Connection', 'close');
+		$response->setHeader('ETag', FDTools::getETag($file->sourceFile));
+		$response->setHeader('Content-Length', FDTools::filesize($file->sourceFile));
 
 		// Cache control
 		if ($file->enableBrowserCache) {
-			$this->setupCacheHeaders($file);
+			$this->setupCacheHeaders($response, $file);
 		} else {
-			$this->setupNonCacheHeaders($file);
+			$this->setupNonCacheHeaders($response, $file);
 		}
 	}
 
-	protected function setupCacheHeaders(BaseFileDownload $file) {
-		$res = Environment::getHttpResponse();
-		$res->setExpiration(time() + 99999999);
-		$res->setHeader('Last-Modified', "Mon, 23 Jan 1978 10:00:00 GMT");
-		if (!empty($_SERVER["HTTP_IF_MODIFIED_SINCE"])) {
-			$res->setCode(Response::S304_NOT_MODIFIED);
+	protected function setupCacheHeaders(Response $response, BaseFileDownload $file) {
+		$response->setExpiration(time() + 99999999);
+		$response->setHeader('Last-Modified', 'Mon, 23 Jan 1978 10:00:00 GMT');
+		if (!empty($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
+			$response->setCode(Response::S304_NOT_MODIFIED);
 			//header("HTTP/1.1 304 Not Modified");
 			exit();
 		};
 	}
 
-	protected function setupNonCacheHeaders(BaseFileDownload $file) {
-		$res = Environment::getHttpResponse();
-		$res->setHeader('Expires', '0');
-		$res->setHeader('Cache-Control', 'must-revalidate, post-check=0, pre-check=0');
+	protected function setupNonCacheHeaders(Response $response, BaseFileDownload $file) {
+		$response->setHeader('Expires', '0');
+		$response->setHeader('Cache-Control', 'must-revalidate, post-check=0, pre-check=0');
 	}
 
 }

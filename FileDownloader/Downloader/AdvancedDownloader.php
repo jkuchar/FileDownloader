@@ -46,7 +46,8 @@ use Exception;
 use FileDownloader\BaseFileDownload;
 use FileDownloader\FDTools;
 use FileDownloader\FileDownloaderException;
-use Nette\Environment;
+use Nette\Http\Request;
+use Nette\Http\Response;
 use Nette\InvalidArgumentException;
 use Nette\InvalidStateException;
 
@@ -63,7 +64,7 @@ class AdvancedDownloader extends BaseDownloader {
 	 * Check for environment configuration?
 	 * @var bool
 	 */
-	static $checkEnvironmentSettings = true;
+	public static $checkEnvironmentSettings = true;
 
 	public $size = 0;
 	public $start = 0;
@@ -85,18 +86,11 @@ class AdvancedDownloader extends BaseDownloader {
 	 */
 	protected $sleep;
 
-	/**
-	 * Download file!
-	 * @param BaseFileDownload $file
-	 */
-	function download(BaseFileDownload $transfer) {
+	public function download(Request $request, Response $response, BaseFileDownload $transfer) {
 		$this->currentTransfer = $transfer;
-		$this->sendStandardFileHeaders($transfer,$this);
+		$this->sendStandardFileHeaders($request, $response, $transfer,$this);
 
 		@ignore_user_abort(true); // For onAbort event
-
-		$req = Environment::getHttpRequest();
-		$res = Environment::getHttpResponse();
 
 		$filesize = $this->size   = $transfer->sourceFileSize;
 		$this->length = $this->size; // Content-length
@@ -119,17 +113,17 @@ class AdvancedDownloader extends BaseDownloader {
 		 */
 
 		//$res->setHeader("Accept-Ranges", "0-".$this->end); // single-part - now not accepted by mozilla
-		$res->setHeader("Accept-Ranges", "bytes"); // multi-part (through Mozilla)
+		$response->setHeader('Accept-Ranges', 'bytes'); // multi-part (through Mozilla)
 		// http://www.w3.org/Protocols/rfc2616/rfc2616-sec19.html#sec19.2
 
-		if ($req->getHeader("Range", false)) // If partial download
+		if ($request->getHeader('Range', false)) // If partial download
 		{
 			try {
 				$range_start = $this->start;
 				$range_end   = $this->end;
 
 				// Extract the range string
-				$rangeArray = explode('=', $req->getHeader("Range"), 2);
+				$rangeArray = explode('=', $request->getHeader('Range'), 2);
 				$range = $rangeArray[1];
 
 				// Make sure the client hasn't sent us a multibyte range
@@ -137,13 +131,13 @@ class AdvancedDownloader extends BaseDownloader {
 					// (?) Shoud this be issued here, or should the first
 					// range be used? Or should the header be ignored and
 					// we output the whole content?
-					throw new FileDownloaderException("HTTP 416",416);
+					throw new FileDownloaderException('HTTP 416',416);
 				}
 
 				// If the range starts with an '-' we start from the beginning
 				// If not, we forward the file pointer
 				// And make sure to get the end byte if spesified
-				if ($range{0} == '-') {
+				if ($range{0} === '-') {
 					// The n-number of the last bytes is requested
 					$range_start = $this->size - (float)substr($range, 1);
 				}
@@ -161,7 +155,7 @@ class AdvancedDownloader extends BaseDownloader {
 				$range_end = ($range_end > $this->end) ? $this->end : $range_end;
 				// Validate the requested range and return an error if it's not correct.
 				if ($range_start > $range_end || $range_start > $this->size - 1 || $range_end >= $this->size) {
-					throw new FileDownloaderException("HTTP 416",416);
+					throw new FileDownloaderException('HTTP 416',416);
 				}
 
 				// All is ok - so assign variables back
@@ -170,18 +164,18 @@ class AdvancedDownloader extends BaseDownloader {
 				$this->length = $this->end - $this->start + 1; // Calculate new content length
 			} catch (FileDownloaderException $e) {
 				if ($e->getCode() === 416) {
-					$res->setHeader("Content-Range", "bytes $this->start-$this->end/$this->size");
-					FDTools::_HTTPError(416);
+					$response->setHeader('Content-Range', "bytes $this->start-$this->end/$this->size");
+					FDTools::_HTTPError($response, 416);
 				} else {
 					throw $e;
 				}
 			}
-			$res->setCode(206); // Partial content
+			$response->setCode(206); // Partial content
 		} // End of if partial download
 
 		// Notify the client the byte range we'll be outputting
-		$res->setHeader("Content-Range","bytes $this->start-$this->end/$this->size");
-		$res->setHeader("Content-Length",$this->length);
+		$response->setHeader('Content-Range',"bytes $this->start-$this->end/$this->size");
+		$response->setHeader('Content-Length',$this->length);
 
 		/* ### Call callbacks ### */
 
@@ -196,24 +190,24 @@ class AdvancedDownloader extends BaseDownloader {
 
 		$buffer = FDTools::$readFileBuffer;
 		$sleep = false;
-		if(is_int($transfer->speedLimit) and $transfer->speedLimit>0) {
+		if(is_int($transfer->speedLimit) && $transfer->speedLimit>0) {
 			$sleep  = true;
 			$buffer = (int)round($transfer->speedLimit);
 		}
 		$this->sleep = $sleep;
 
 		if ($buffer < 1) {
-			throw new InvalidArgumentException("Buffer must be bigger than zero!");
+			throw new InvalidArgumentException('Buffer must be bigger than zero!');
 		}
 		$availableMem = FDTools::getAvailableMemory();
 		if ($availableMem && $buffer > ($availableMem - memory_get_usage())) {
-			throw new InvalidArgumentException("Buffer is too big! (bigger than available memory)");
+			throw new InvalidArgumentException('Buffer is too big! (bigger than available memory)');
 		}
 		$this->buffer = $buffer;
 
 
 
-		$fp = fopen($transfer->sourceFile,"rb");
+		$fp = fopen($transfer->sourceFile, 'rb');
 		// TODO: Add flock() READ
 		if (!$fp) {
 			throw new InvalidStateException("Can't open file for reading!");
@@ -248,7 +242,7 @@ class AdvancedDownloader extends BaseDownloader {
 			$this->position = $this->start;
 		}
 
-		$this->processNative($fp,$sleep);
+		$this->processNative($fp);
 		$this->cleanAfterTransfer();
 	}
 
@@ -282,19 +276,21 @@ class AdvancedDownloader extends BaseDownloader {
 	}
 
 	protected function processByCUrl() {
-		if(function_exists("curl_init")) { // Curl available
+		if(function_exists('curl_init')) { // Curl available
 
 			$transfer = $this->currentTransfer;
 
-			$ch = curl_init("file://" . realpath($transfer->sourceFile));
+			$ch = curl_init('file://' . realpath($transfer->sourceFile));
 			$range = $this->start.'-'.$this->end; // HTTP range
 			curl_setopt($ch, CURLOPT_RANGE, $range);
 			curl_setopt($ch, CURLOPT_BINARYTRANSFER, 1);
 			curl_setopt($ch, CURLOPT_BUFFERSIZE, $this->buffer);
-			curl_setopt($ch, CURLOPT_WRITEFUNCTION, array($this,"_curlProcessBlock"));
+			curl_setopt($ch, CURLOPT_WRITEFUNCTION, array($this,
+				'_curlProcessBlock'
+			));
 			$curlRet = curl_exec($ch);
 			if($curlRet === false) {
-				throw new Exception("cUrl error number ".curl_errno($ch).": ".curl_error($ch));
+				throw new Exception('cUrl error number ' .curl_errno($ch). ': ' .curl_error($ch));
 			}
 			return true;
 		}else{
@@ -332,7 +328,7 @@ class AdvancedDownloader extends BaseDownloader {
 		flush(); // PHP: Do not buffer it - send it to browser!
 		@ob_flush();
 
-		if(connection_status()!=CONNECTION_NORMAL) {
+		if(connection_status() !== CONNECTION_NORMAL) {
 			if ($fp) {
 				fclose($fp);
 			}
@@ -342,14 +338,14 @@ class AdvancedDownloader extends BaseDownloader {
 			}
 			die();
 		}
-		if($this->sleep==true OR $tmpTime<=time()) {
+		if($this->sleep === true || $tmpTime<=time()) {
 			$transfer->transferredBytes = $this->transferred = $this->position-$this->start;
 			$transfer->onStatusChange($transfer,$this);
-			if (IsSet($tmpTime)) {
+			if ($tmpTime !== NULL) {
 				$tmpTime = time() + 1;
 			}
 		}
-		if ($this->sleep == true) {
+		if ($this->sleep === true) {
 			sleep(1);
 		}
 	}
@@ -358,8 +354,8 @@ class AdvancedDownloader extends BaseDownloader {
 	 * Is this downloader initialized?
 	 * @return bool
 	 */
-	function isInitialized() {
-		if ($this->end == 0) {
+	public function isInitialized() {
+		if ($this->end === 0) {
 			return false;
 		}
 		return true;
@@ -371,7 +367,7 @@ class AdvancedDownloader extends BaseDownloader {
 	 * @param BaseFileDownload $file
 	 * @return bool TRUE if is compatible; FALSE if not
 	 */
-	function isCompatible(BaseFileDownload $file) {
+	public function isCompatible(BaseFileDownload $file) {
 		if(self::$checkEnvironmentSettings === true) {
 			if (FDTools::setTimeLimit(0) !== true) {
 				return false;
