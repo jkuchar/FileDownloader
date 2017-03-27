@@ -46,7 +46,6 @@ use Exception;
 use FileDownloader\BaseFileDownload;
 use FileDownloader\FDTools;
 use FileDownloader\FileDownloaderException;
-use Nette\Environment;
 use Nette\Http\Request;
 use Nette\Http\Response;
 use Nette\InvalidArgumentException;
@@ -337,10 +336,10 @@ class AdvancedDownloader extends BaseDownloader {
 			}
 			die();
 		}
-		if($this->sleep==true OR $tmpTime<=time()) {
+		if($this->sleep == true OR $tmpTime<=time()) {
 			$transfer->transferredBytes = $this->transferred = $this->position-$this->start;
 			$transfer->onStatusChange($transfer,$this);
-			if (IsSet($tmpTime)) {
+			if ($tmpTime !== NULL) {
 				$tmpTime = time() + 1;
 			}
 		}

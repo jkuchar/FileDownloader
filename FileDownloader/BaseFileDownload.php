@@ -349,7 +349,7 @@ abstract class BaseFileDownload extends Object {
 	}
 
 	public function  __construct() {
-		$this->vTransferID = time()."-".rand();
+		$this->vTransferID = time()."-".mt_rand();
 		foreach(self::$defaults AS $key => $val) {
 			$this->$key = $val;
 		}
@@ -498,7 +498,7 @@ abstract class BaseFileDownload extends Object {
 		}
 
 		// By file extension from ini file
-		$mimeTypes = parse_ini_file(dirname(__FILE__) . DIRECTORY_SEPARATOR . "mime.ini");
+		$mimeTypes = parse_ini_file(__DIR__ . DIRECTORY_SEPARATOR . "mime.ini");
 
 		$extension = pathinfo($this->sourceFile, PATHINFO_EXTENSION);
 		if (array_key_exists($extension, $mimeTypes)) {
@@ -545,7 +545,7 @@ abstract class BaseFileDownload extends Object {
 			$session->close();
 		}
 
-		if($this->getContentDisposition() == "inline" AND is_null($this->enableBrowserCache)) {
+		if($this->getContentDisposition() == "inline" AND $this->enableBrowserCache === NULL) {
 			$this->enableBrowserCache = true;
 		}else{
 			$this->enableBrowserCache = false;
