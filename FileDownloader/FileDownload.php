@@ -77,7 +77,7 @@ use Nette\Object;
  * @property int $contentDisposition    Content disposition: inline or attachment
  * @property-read float $sourceFileSize   File size
  */
-class FileDownload extends Object {
+final class FileDownload extends Object {
 
 	const CONTENT_DISPOSITION_ATTACHMENT = 'attachment';
 	const CONTENT_DISPOSITION_INLINE = 'inline';
