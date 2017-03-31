@@ -39,7 +39,7 @@
 namespace FileDownloader\Downloader;
 
 use FileDownloader\FileDownload;
-use FileDownloader\FDTools;
+use FileDownloader\Tools;
 use FileDownloader\IDownloader;
 use Nette\Http\Request;
 use Nette\Http\Response;
@@ -63,7 +63,7 @@ abstract class BaseDownloader extends Object implements IDownloader {
 	 * @throws \Nette\InvalidStateException If headers already sent
 	 */
 	protected function sendStandardFileHeaders(Request $request, Response $response, FileDownload $file, BaseDownloader $downloader=null) {
-		//FDTools::clearHeaders($res); // Voláno už v FileDownload.php
+		//Tools::clearHeaders($res); // Voláno už v FileDownload.php
 
 		$response->setContentType($file->mimeType, 'UTF-8');
 		$response->setHeader('X-File-Downloader', 'File Downloader (http://filedownloader.projekty.mujserver.net)');
@@ -72,12 +72,12 @@ abstract class BaseDownloader extends Object implements IDownloader {
 		}
 
 		$response->setHeader('Pragma', 'public'); // Fix for IE - Content-Disposition
-		$response->setHeader('Content-Disposition', $file->getContentDisposition() . '; filename="' . FDTools::getContentDispositionHeaderData($request, $file->transferFileName) . '"');
+		$response->setHeader('Content-Disposition', $file->getContentDisposition() . '; filename="' . Tools::getContentDispositionHeaderData($request, $file->transferFileName) . '"');
 		$response->setHeader('Content-Description', 'File Transfer');
 		$response->setHeader('Content-Transfer-Encoding', 'binary');
 		$response->setHeader('Connection', 'close');
-		$response->setHeader('ETag', FDTools::getETag($file->sourceFile));
-		$response->setHeader('Content-Length', FDTools::filesize($file->sourceFile));
+		$response->setHeader('ETag', Tools::getETag($file->sourceFile));
+		$response->setHeader('Content-Length', Tools::filesize($file->sourceFile));
 
 		// Cache control
 		if ($file->enableBrowserCache) {

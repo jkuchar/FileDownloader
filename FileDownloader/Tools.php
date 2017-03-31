@@ -54,7 +54,7 @@ use Nette\Object;
  * @copyright   Copyright (c) 2014 Jan Kuchar
  * @author      Jan Kuchař
  */
-class FDTools extends Object {
+class Tools extends Object {
 	const BYTE  = 1;
 	const KILOBYTE = 1024;
 	const MEGABYTE = 1048576;
@@ -62,7 +62,7 @@ class FDTools extends Object {
 	const TERABYTE = 1099511627776;
 
 	/**
-	 * Buffer for FDTools::readfile()
+	 * Buffer for Tools::readfile()
 	 * @var int
 	 */
 	static public $readFileBuffer = 524288; // 512kb
@@ -225,7 +225,7 @@ class FDTools extends Object {
 	 * Sends file to browser. (enhanced readfile())
 	 * This function do not send any headers!
 	 *
-	 * It is strongly recomended to set time limit to zero. ( FDTools::setTimeLimit(0) )
+	 * It is strongly recomended to set time limit to zero. ( Tools::setTimeLimit(0) )
 	 * If time limit gone before file download ends download may be corrupted!
 	 *
 	 * Sources:
@@ -298,7 +298,7 @@ class FDTools extends Object {
 			if ($finfo = @finfo_open(FILEINFO_MIME)) {
 				$mime = @finfo_file($finfo, $file);
 				@finfo_close($finfo);
-				if (FDTools::isValidMimeType($mime)) {
+				if (Tools::isValidMimeType($mime)) {
 					return $mime;
 				}
 			}
@@ -306,7 +306,7 @@ class FDTools extends Object {
 
 		if(function_exists('mime_content_type')) {
 			$mime = mime_content_type($file);
-			if (FDTools::isValidMimeType($mime)) {
+			if (Tools::isValidMimeType($mime)) {
 				return $mime;
 			}
 		}
@@ -318,7 +318,7 @@ class FDTools extends Object {
 		if (array_key_exists($extension, $mimeTypes)) {
 			$mime = $mimeTypes[$extension];
 		}
-		if (FDTools::isValidMimeType($mime)) {
+		if (Tools::isValidMimeType($mime)) {
 			return $mime;
 		}
 

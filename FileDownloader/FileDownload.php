@@ -204,7 +204,7 @@ class FileDownload extends Object {
 		if ($speed < 0) {
 			throw new InvalidArgumentException("Max download speed can't be smaller than zero!");
 		}
-		$availableMem = FDTools::getAvailableMemory();
+		$availableMem = Tools::getAvailableMemory();
 		if ($availableMem) {
 			$availableMemWithReserve = ($availableMem-100*1024);
 			if ($speed > $availableMemWithReserve) {
@@ -233,7 +233,7 @@ class FileDownload extends Object {
 			return $this->vMimeType;
 		}
 
-		return FDTools::detectMimeType($this->vSourceFile);
+		return Tools::detectMimeType($this->vSourceFile);
 	}
 
 	/**
@@ -251,7 +251,7 @@ class FileDownload extends Object {
 	 * @return \Brick\Math\BigInteger
 	 */
 	public function getSourceFileSize() {
-		return FDTools::filesize($this->sourceFile);
+		return Tools::filesize($this->sourceFile);
 	}
 
 }

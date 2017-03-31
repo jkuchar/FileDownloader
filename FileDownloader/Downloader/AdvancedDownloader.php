@@ -46,7 +46,7 @@ namespace FileDownloader\Downloader;
 
 use Exception;
 use FileDownloader\FileDownload;
-use FileDownloader\FDTools;
+use FileDownloader\Tools;
 use FileDownloader\FileDownloaderException;
 use FileDownloader\IDownloader;
 use Nette\Http\Request;
@@ -177,7 +177,7 @@ class AdvancedDownloader extends BaseDownloader {
 			} catch (FileDownloaderException $e) {
 				if ($e->getCode() === 416) {
 					$response->setHeader('Content-Range', "bytes $this->start-$this->end/$this->size");
-					FDTools::_HTTPError($response, 416);
+					Tools::_HTTPError($response, 416);
 				} else {
 					throw $e;
 				}
@@ -200,7 +200,7 @@ class AdvancedDownloader extends BaseDownloader {
 
 		/* ### Send file to browser - document body ### */
 
-		$buffer = FDTools::$readFileBuffer;
+		$buffer = Tools::$readFileBuffer;
 		$sleep = false;
 		if(is_int($file->speedLimit) && $file->speedLimit>0) {
 			$sleep  = true;
@@ -211,7 +211,7 @@ class AdvancedDownloader extends BaseDownloader {
 		if ($buffer < 1) {
 			throw new InvalidArgumentException('Buffer must be bigger than zero!');
 		}
-		$availableMem = FDTools::getAvailableMemory();
+		$availableMem = Tools::getAvailableMemory();
 		if ($availableMem && $buffer > ($availableMem - memory_get_usage())) {
 			throw new InvalidArgumentException('Buffer is too big! (bigger than available memory)');
 		}
@@ -380,7 +380,7 @@ class AdvancedDownloader extends BaseDownloader {
 	 */
 	public function isCompatible(FileDownload $file) {
 		if(self::$checkEnvironmentSettings === true) {
-			if (FDTools::setTimeLimit(0) !== true) {
+			if (Tools::setTimeLimit(0) !== true) {
 				return false;
 			}
 		}
