@@ -449,12 +449,11 @@ abstract class BaseFileDownload extends Object {
 		if (array_key_exists($extension, $mimeTypes)) {
 			$mime = $mimeTypes[$extension];
 		}
-
 		if (FDTools::isValidMimeType($mime)) {
 			return $mime;
-		} else {
-			return 'application/octet-stream';
 		}
+
+		return 'application/octet-stream';
 	}
 
 	/**

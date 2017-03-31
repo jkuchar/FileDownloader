@@ -36,6 +36,8 @@
  * @link       http://filedownloader.projekty.mujserver.net
  */
 
+// todo: Split request parsing
+
 // TODO: Floating buffer (buffer size changing dynamically by the speed of client)
 // TODO: Add custom priority of download modules
 // TODO: Move from float to strings and use bcmath for computations
@@ -218,7 +220,7 @@ class AdvancedDownloader extends BaseDownloader {
 
 
 		if(fseek($fp, $this->start, SEEK_SET) === -1) { // Move file pointer to the start of the download
-			// Can not move pointer to begining of the filetransfer
+			// Can not move pointer to beginning of the filetransfer
 
 			if($this->processByCUrl() === true) {
 				// Request was hadled by curl, clean, exit
@@ -238,7 +240,7 @@ class AdvancedDownloader extends BaseDownloader {
 				$this->position += strlen(fread($fp, min($maxBuffer, $this->start-$this->position)));
 			}
 		}else{
-			// We are at the begining
+			// We are at the beginning
 			$this->position = $this->start;
 		}
 
@@ -276,26 +278,23 @@ class AdvancedDownloader extends BaseDownloader {
 	}
 
 	protected function processByCUrl() {
-		if(function_exists('curl_init')) { // Curl available
+		if(!function_exists('curl_init')) {return false;}
 
-			$transfer = $this->currentTransfer;
+		$transfer = $this->currentTransfer;
 
-			$ch = curl_init('file://' . realpath($transfer->sourceFile));
-			$range = $this->start.'-'.$this->end; // HTTP range
-			curl_setopt($ch, CURLOPT_RANGE, $range);
-			curl_setopt($ch, CURLOPT_BINARYTRANSFER, 1);
-			curl_setopt($ch, CURLOPT_BUFFERSIZE, $this->buffer);
-			curl_setopt($ch, CURLOPT_WRITEFUNCTION, array($this,
-				'_curlProcessBlock'
-			));
-			$curlRet = curl_exec($ch);
-			if($curlRet === false) {
-				throw new Exception('cUrl error number ' .curl_errno($ch). ': ' .curl_error($ch));
-			}
-			return true;
-		} else {
-			return false;
+		$ch = curl_init('file://' . realpath($transfer->sourceFile));
+		$range = $this->start.'-'.$this->end; // HTTP range
+		curl_setopt($ch, CURLOPT_RANGE, $range);
+		curl_setopt($ch, CURLOPT_BINARYTRANSFER, 1);
+		curl_setopt($ch, CURLOPT_BUFFERSIZE, $this->buffer);
+		curl_setopt($ch, CURLOPT_WRITEFUNCTION, array($this,
+			'_curlProcessBlock'
+		));
+		$curlRet = curl_exec($ch);
+		if($curlRet === false) {
+			throw new Exception('cUrl error number ' .curl_errno($ch). ': ' .curl_error($ch));
 		}
+		return true;
 	}
 
 	/**
