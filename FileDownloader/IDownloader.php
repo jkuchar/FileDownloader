@@ -51,20 +51,20 @@ use Nette\Http\Response;
 interface IDownloader {
 	/**
 	 * Download file!
-	 * @param BaseFileDownload|FileDownload $file
-	 * @param Request                       $request  HTTP request
-	 * @param Response                      $response HTTP response
+	 * @param FileDownload|FileDownload $file
+	 * @param Request                   $request  HTTP request
+	 * @param Response                  $response HTTP response
 	 * @return
 	 */
-	public function download(BaseFileDownload $file, Request $request, Response $response);
+	public function download(FileDownload $file, Request $request, Response $response);
 
 
 	/**
 	 * Is this downloader compatible?
-	 * @param BaseFileDownload|FileDownload $file
+	 * @param FileDownload|FileDownload $file
 	 * @return bool TRUE if is compatible; FALSE if not
 	 */
-	public function isCompatible(BaseFileDownload $file);
+	public function isCompatible(FileDownload $file);
 }
 
 

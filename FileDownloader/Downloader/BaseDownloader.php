@@ -38,7 +38,7 @@
 
 namespace FileDownloader\Downloader;
 
-use FileDownloader\BaseFileDownload;
+use FileDownloader\FileDownload;
 use FileDownloader\FDTools;
 use FileDownloader\IDownloader;
 use Nette\Http\Request;
@@ -56,13 +56,13 @@ use Nette\Object;
 abstract class BaseDownloader extends Object implements IDownloader {
 	/**
 	 * Sends a standard headers for file download
-	 * @param Request          $request
-	 * @param Response         $rCesponse
-	 * @param BaseFileDownload $file       File
-	 * @param BaseDownloader   $downloader Downloader of the file
+	 * @param Request        $request
+	 * @param Response       $rCesponse
+	 * @param FileDownload   $file       File
+	 * @param BaseDownloader $downloader Downloader of the file
 	 * @throws \Nette\InvalidStateException If headers already sent
 	 */
-	protected function sendStandardFileHeaders(Request $request, Response $response, BaseFileDownload $file, BaseDownloader $downloader=null) {
+	protected function sendStandardFileHeaders(Request $request, Response $response, FileDownload $file, BaseDownloader $downloader=null) {
 		//FDTools::clearHeaders($res); // Voláno už v FileDownload.php
 
 		$response->setContentType($file->mimeType, 'UTF-8');
@@ -87,7 +87,7 @@ abstract class BaseDownloader extends Object implements IDownloader {
 		}
 	}
 
-	protected function setupCacheHeaders(Response $response, BaseFileDownload $file) {
+	protected function setupCacheHeaders(Response $response, FileDownload $file) {
 		$response->setExpiration(time() + 99999999);
 		$response->setHeader('Last-Modified', 'Mon, 23 Jan 1978 10:00:00 GMT');
 		if (!empty($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
@@ -97,7 +97,7 @@ abstract class BaseDownloader extends Object implements IDownloader {
 		}
 	}
 
-	protected function setupNonCacheHeaders(Response $response, BaseFileDownload $file) {
+	protected function setupNonCacheHeaders(Response $response, FileDownload $file) {
 		$response->setHeader('Expires', '0');
 		$response->setHeader('Cache-Control', 'must-revalidate, post-check=0, pre-check=0');
 	}

@@ -39,7 +39,7 @@
 
 namespace FileDownloader\Downloader;
 
-use FileDownloader\BaseFileDownload;
+use FileDownloader\FileDownload;
 use Nette\Http\Request;
 use Nette\Http\Response;
 use Nette\InvalidStateException;
@@ -55,12 +55,12 @@ use Nette\InvalidStateException;
 class NativePHPDownloader extends BaseDownloader {
 	/**
 	 * Download file!
-	 * @param BaseFileDownload     $file
+	 * @param FileDownload         $file
 	 * @param \Nette\Http\Request  $request
 	 * @param \Nette\Http\Response $response
 	 * @throws \Nette\InvalidStateException
 	 */
-	public function download(BaseFileDownload $file, Request $request, Response $response) {
+	public function download(FileDownload $file, Request $request, Response $response) {
 		$this->sendStandardFileHeaders($request, $response, $file, $this);
 		$file->onBeforeOutputStarts($file, $this);
 
@@ -81,11 +81,11 @@ class NativePHPDownloader extends BaseDownloader {
 
 	/**
 	 * Is this downloader compatible?
-	 * @param BaseFileDownload $file
-	 * @param bool $isLast Is this last downloader in list?
+	 * @param FileDownload $file
+	 * @param bool         $isLast Is this last downloader in list?
 	 * @return bool TRUE if is compatible; FALSE if not
 	 */
-	public function isCompatible(BaseFileDownload $file) {
+	public function isCompatible(FileDownload $file) {
 		return true;
 	}
 }

@@ -45,7 +45,7 @@
 namespace FileDownloader\Downloader;
 
 use Exception;
-use FileDownloader\BaseFileDownload;
+use FileDownloader\FileDownload;
 use FileDownloader\FDTools;
 use FileDownloader\FileDownloaderException;
 use Nette\Http\Request;
@@ -76,7 +76,7 @@ class AdvancedDownloader extends BaseDownloader {
 	public $transferred = 0;
 
 	/**
-	 * @var BaseFileDownload
+	 * @var FileDownload
 	 */
 	public $currentTransfer;
 
@@ -88,7 +88,7 @@ class AdvancedDownloader extends BaseDownloader {
 	 */
 	protected $sleep;
 
-	public function download(BaseFileDownload $file, Request $request, Response $response) {
+	public function download(FileDownload $file, Request $request, Response $response) {
 		$this->currentTransfer = $file;
 		$this->sendStandardFileHeaders($request, $response, $file,$this);
 
@@ -363,10 +363,10 @@ class AdvancedDownloader extends BaseDownloader {
 
 	/**
 	 * Is this downloader compatible?
-	 * @param BaseFileDownload $file
+	 * @param FileDownload $file
 	 * @return bool TRUE if is compatible; FALSE if not
 	 */
-	public function isCompatible(BaseFileDownload $file) {
+	public function isCompatible(FileDownload $file) {
 		if(self::$checkEnvironmentSettings === true) {
 			if (FDTools::setTimeLimit(0) !== true) {
 				return false;
