@@ -48,6 +48,7 @@ use Exception;
 use FileDownloader\FileDownload;
 use FileDownloader\FDTools;
 use FileDownloader\FileDownloaderException;
+use FileDownloader\IDownloader;
 use Nette\Http\Request;
 use Nette\Http\Response;
 use Nette\InvalidArgumentException;
@@ -60,6 +61,15 @@ use Nette\InvalidStateException;
  * @author      Jan Kuchař
  * @copyright   Copyright (c) 2014 Jan Kuchar
  * @author      Jan Kuchař
+ *
+ * Callbacks:
+ * @method void onBeforeOutputStarts(FileDownload $fileDownload, IDownloader $downloader)
+ * @method void onStatusChange(FileDownload $fileDownload, IDownloader $downloader)
+ * @method void onComplete(FileDownload $fileDownload, IDownloader $downloader)
+ * @method void onTransferContinue(FileDownload $fileDownload, IDownloader $downloader)
+ * @method void onNewTransferStart(FileDownload $fileDownload, IDownloader $downloader)
+ * @method void onAbort(FileDownload $fileDownload, IDownloader $downloader)
+ * @method void onConnectionLost(FileDownload $fileDownload, IDownloader $downloader)
  */
 class AdvancedDownloader extends BaseDownloader {
 	/**
@@ -181,11 +191,11 @@ class AdvancedDownloader extends BaseDownloader {
 
 		/* ### Call callbacks ### */
 
-		$file->onBeforeOutputStarts($file,$this);
+		$this->onBeforeOutputStarts($file,$this);
 		if ($this->start > 0) {
-			$file->onTransferContinue($file, $this);
+			$this->onTransferContinue($file, $this);
 		} else {
-			$file->onNewTransferStart($file, $this);
+			$this->onNewTransferStart($file, $this);
 		}
 
 		/* ### Send file to browser - document body ### */
@@ -224,6 +234,7 @@ class AdvancedDownloader extends BaseDownloader {
 
 			if($this->processByCUrl() === true) {
 				// Request was hadled by curl, clean, exit
+				$this->onComplete($file, $this);
 				$this->cleanAfterTransfer();
 				return;
 			}
@@ -246,6 +257,7 @@ class AdvancedDownloader extends BaseDownloader {
 
 		$this->processNative($fp);
 		$this->cleanAfterTransfer();
+		$this->onComplete($file, $this);
 	}
 
 	protected function cleanAfterTransfer() {
@@ -331,15 +343,15 @@ class AdvancedDownloader extends BaseDownloader {
 			if ($fp) {
 				fclose($fp);
 			}
-			$transfer->onConnectionLost($transfer,$this);
+			$this->onConnectionLost($transfer,$this);
 			if(connection_aborted()) {
-				$transfer->onAbort($transfer,$this);
+				$this->onAbort($transfer,$this);
 			}
 			die();
 		}
 		if($this->sleep === true || $tmpTime<=time()) {
 			$transfer->transferredBytes = $this->transferred = $this->position-$this->start;
-			$transfer->onStatusChange($transfer,$this);
+			$this->onStatusChange($transfer,$this);
 			if ($tmpTime !== NULL) {
 				$tmpTime = time() + 1;
 			}
@@ -374,5 +386,156 @@ class AdvancedDownloader extends BaseDownloader {
 		}
 		return true;
 	}
+
+
+
+
+	/**
+	 * Callback - before is send first bit of file to browser
+	 * First parameter will be this file
+	 * Second parameter will be downloader object
+	 *  NOTE: This callback must be supported by downloader!
+	 * @var array
+	 */
+	public $onBeforeOutputStarts = array();
+
+	/**
+	 * Adds onBeforeOutputStarts callback
+	 * @param callback $callback Callback
+	 * @return void
+	 */
+	public function addBeforeOutputStartsCallback($callback) {
+		$this->addCallback(__METHOD__, $callback);
+	}
+
+	/**
+	 * Callback - when status changes
+	 * First parameter will be this file
+	 * Second parameter will be downloader object
+	 *  NOTE: This callback must be supported by downloader!
+	 * @var array
+	 */
+	public $onStatusChange = array();
+
+	/**
+	 * Adds StatusChange callback
+	 * @param callback $callback Callback
+	 * @return void
+	 */
+	public function addStatusChangeCallback($callback) {
+		$this->addCallback(__METHOD__, $callback);
+	}
+
+	/**
+	 * Callback - when file download completed
+	 * First parameter will be this file
+	 * Second parameter will be downloader object
+	 * @var array
+	 */
+	public $onComplete = array();
+
+	/**
+	 * Adds Complete callback
+	 * @param callback $callback Callback
+	 * @return void
+	 */
+	public function addCompleteCallback($callback) {
+		$this->addCallback(__METHOD__, $callback);
+	}
+
+	/**
+	 * Callback - when file download has been corrupted/stopped and now
+	 * again conected and wants only part of the file.
+	 * Called after - onBeforeOutputStarts
+	 * First parameter will be this file
+	 * Second parameter will be downloader object
+	 *  NOTE: This callback must be supported by downloader!
+	 * @var array
+	 */
+	public $onTransferContinue = array();
+
+	/**
+	 * Adds TransferContinue callback
+	 * @param callback $callback Callback
+	 * @return void
+	 */
+	public function addTransferContinueCallback($callback) {
+		$this->addCallback(__METHOD__, $callback);
+	}
+
+	/**
+	 * Callback - when new file download starts (from the begining)
+	 * Called after - onBeforeOutputStarts
+	 * First parameter will be this file
+	 * Second parameter will be downloader object
+	 *  NOTE: This callback must be supported by downloader!
+	 * @var array
+	 */
+	public $onNewTransferStart = array();
+
+	/**
+	 * Adds NewTransferStart callback
+	 * @param callback $callback Callback
+	 * @return void
+	 */
+	public function addNewTransferStartCallback($callback) {
+		$this->addCallback(__METHOD__, $callback);
+	}
+
+	/**
+	 * Callback - when browser disconnects from server (abort)
+	 * First parameter will be this file
+	 * Second parameter will be downloader object
+	 *  NOTE: This callback must be supported by downloader!
+	 * @var array
+	 */
+	public $onAbort = array();
+
+	/**
+	 * Adds Abort callback
+	 * @param callback $callback Callback
+	 * @return void
+	 */
+	public function addAbortCallback($callback) {
+		$this->addCallback(__METHOD__, $callback);
+	}
+
+	/**
+	 * Callback - when browser disconnects from server (abort,timeout)
+	 * First parameter will be this file
+	 * Second parameter will be downloader object
+	 *  NOTE: This callback must be supported by downloader!
+	 * @var array
+	 */
+	public $onConnectionLost = array();
+
+	/**
+	 * Adds ConnectionError callback
+	 * @param callback $callback Callback
+	 * @return void
+	 */
+	public function addConnectionLostCallback($callback) {
+		$this->addCallback(__METHOD__, $callback);
+	}
+
+	/**
+	 * Adds callback
+	 * @param string $name          Name of callback
+	 * @param callback $callback    Callback
+	 */
+	private function addCallback($fceName, $callback) {
+		preg_match('/^.*::add(.*)Callback$/', $fceName, $matches);
+		$varName = 'on' .$matches[1];
+		$var = &$this->$varName;
+		$var[] = $callback;
+	}
+
+
+	/**
+	 * How many bytes is sent
+	 * @var int
+	 */
+	public $transferredBytes = 0;
+
 }
 

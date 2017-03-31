@@ -283,10 +283,10 @@ class FDTools extends Object {
 	 * for all files, also those > 4 GB:
 	 * @see http://www.php.net/manual/en/function.filesize.php#102135
 	 * @param string $file
-	 * @return float
+	 * @return \Brick\Math\BigInteger
 	 */
 	public static function filesize($file) {
-		return BigFileTools::fromPath($file)->getSize(true);
+		return BigFileTools\BigFileTools::createDefault()->getFile($file)->getSize();
 	}
 
 }
