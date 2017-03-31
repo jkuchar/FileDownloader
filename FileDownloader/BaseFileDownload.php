@@ -90,41 +90,6 @@ use Nette\Object;
 
  */
 abstract class BaseFileDownload extends Object {
-	/**
-	 * Array with defaults (will web called <code>$file->$key = $val;</code>)
-	 * @var array
-	 */
-	public static $defaults = array();
-
-	/**
-	 * Downloaders array
-	 * @var array
-	 */
-	private static $fileDownloaders=array();
-
-	/**
-	 * Add file downloader
-	 *   Order is priority (last added will be used first)
-	 * @param IDownloader $downloader
-	 */
-	public static function registerFileDownloader(IDownloader $downloader) {
-		self::$fileDownloaders[] = $downloader;
-	}
-
-	/**
-	 * Get all registered file downloaders
-	 * @return array
-	 */
-	public static function getFileDownloaders() {
-		return self::$fileDownloaders;
-	}
-
-	/**
-	 * Unregister all registered downloaders
-	 */
-	public static function clearFileDownloaders() {
-		self::$fileDownloaders = array();
-	}
 
 	/**
 	 * Transfer identificator
@@ -341,9 +306,6 @@ abstract class BaseFileDownload extends Object {
 
 	public function  __construct() {
 		$this->vTransferID = time(). '-' .mt_rand();
-		foreach(self::$defaults AS $key => $val) {
-			$this->$key = $val;
-		}
 	}
 
 	/**
@@ -540,7 +502,7 @@ abstract class BaseFileDownload extends Object {
 
 		$this->enableBrowserCache = ($this->enableBrowserCache === NULL && $this->getContentDisposition() === 'inline');
 
-		$downloaders = $inputDownloader === null ? self::getFileDownloaders() : array($inputDownloader);
+		$downloaders = $inputDownloader === null ? [new AdvancedDownloader(), new NativePHPDownloader()] : array($inputDownloader);
 
 		if (count($downloaders) <= 0) {
 			throw new InvalidStateException('There is no registered downloader!');
@@ -588,10 +550,6 @@ abstract class BaseFileDownload extends Object {
 		throw new InvalidStateException('There is no compatible downloader (all downloader returns downloader->isComplatible()=false or was skipped)!');
 	}
 }
-
-/* Register default downloaders */
-BaseFileDownload::registerFileDownloader(new NativePHPDownloader);
-BaseFileDownload::registerFileDownloader(new AdvancedDownloader);
 
 /**
  * When some http error
