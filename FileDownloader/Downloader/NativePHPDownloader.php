@@ -53,12 +53,14 @@ use Nette\InvalidStateException;
  * @author      Jan Kuchař
  */
 class NativePHPDownloader extends BaseDownloader {
-
 	/**
 	 * Download file!
-	 * @param BaseFileDownload $file
+	 * @param BaseFileDownload     $file
+	 * @param \Nette\Http\Request  $request
+	 * @param \Nette\Http\Response $response
+	 * @throws \Nette\InvalidStateException
 	 */
-	public function download(Request $request, Response $response, BaseFileDownload $file) {
+	public function download(BaseFileDownload $file, Request $request, Response $response) {
 		$this->sendStandardFileHeaders($request, $response, $file, $this);
 		$file->onBeforeOutputStarts($file, $this);
 

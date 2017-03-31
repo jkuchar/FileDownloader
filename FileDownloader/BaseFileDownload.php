@@ -103,7 +103,7 @@ abstract class BaseFileDownload extends Object {
 	private static $fileDownloaders=array();
 
 	/**
-	 * Add file downlaoder
+	 * Add file downloader
 	 *   Order is priority (last added will be used first)
 	 * @param IDownloader $downloader
 	 */
@@ -112,7 +112,7 @@ abstract class BaseFileDownload extends Object {
 	}
 
 	/**
-	 * Getts all registred file downloaders
+	 * Get all registered file downloaders
 	 * @return array
 	 */
 	public static function getFileDownloaders() {
@@ -120,26 +120,17 @@ abstract class BaseFileDownload extends Object {
 	}
 
 	/**
-	 * Unregister all registred downloaders
+	 * Unregister all registered downloaders
 	 */
 	public static function clearFileDownloaders() {
 		self::$fileDownloaders = array();
 	}
 
 	/**
-	 * Getts new instance of self
-	 * @return FileDownload
-	 */
-	// moved to subclasses
-	//public static function getInstance() {
-	//	return new FileDownload();
-	//}
-
-	/**
 	 * Transfer identificator
 	 * @var string
 	 */
-	private $vTransferID = -1;
+	private $vTransferID;
 
 	const CONTENT_DISPOSITION_ATTACHMENT = 'attachment';
 	const CONTENT_DISPOSITION_INLINE = 'inline';
@@ -356,7 +347,7 @@ abstract class BaseFileDownload extends Object {
 	}
 
 	/**
-	 * Getts transfer identificator
+	 * Get transfer identificator
 	 * @return string
 	 */
 	public function getTransferId() {
@@ -385,7 +376,7 @@ abstract class BaseFileDownload extends Object {
 	}
 
 	/**
-	 * Getts location of the source file
+	 * Get location of the source file
 	 * @return string
 	 */
 	public function getSourceFile() {
@@ -410,7 +401,7 @@ abstract class BaseFileDownload extends Object {
 	}
 
 	/**
-	 * Getts content disposition
+	 * Get content disposition
 	 * @return string
 	 */
 	public function getContentDisposition() {
@@ -418,7 +409,7 @@ abstract class BaseFileDownload extends Object {
 	}
 
 	/**
-	 * Getts send as name
+	 * Get send as name
 	 * @return string
 	 */
 	public function getTransferFileName() {
@@ -460,7 +451,7 @@ abstract class BaseFileDownload extends Object {
 	}
 
 	/**
-	 * Getts speed limit
+	 * Get speed limit
 	 * @return int
 	 */
 	public function getSpeedLimit() {
@@ -523,7 +514,7 @@ abstract class BaseFileDownload extends Object {
 	}
 
 	/**
-	 * Getts file size
+	 * Get file size
 	 * @return float
 	 */
 	public function getSourceFileSize() {
@@ -541,24 +532,18 @@ abstract class BaseFileDownload extends Object {
 	 */
 	public function download(IDownloader $inputDownloader = null, Request $request, Response $response, Session $session) {
 
+		trigger_error('Use IDownloader::download() instead.', E_USER_DEPRECATED);
+
 		if($session->isStarted()) {
 			$session->close();
 		}
 
-		if($this->enableBrowserCache === NULL && $this->getContentDisposition() === 'inline') {
-			$this->enableBrowserCache = true;
-		}else{
-			$this->enableBrowserCache = false;
-		}
+		$this->enableBrowserCache = ($this->enableBrowserCache === NULL && $this->getContentDisposition() === 'inline');
 
-		if ($inputDownloader === null) {
-			$downloaders = self::getFileDownloaders();
-		} else {
-			$downloaders = array($inputDownloader);
-		}
+		$downloaders = $inputDownloader === null ? self::getFileDownloaders() : array($inputDownloader);
 
 		if (count($downloaders) <= 0) {
-			throw new InvalidStateException('There is no registred downloader!');
+			throw new InvalidStateException('There is no registered downloader!');
 		}
 
 		krsort($downloaders);
@@ -571,33 +556,35 @@ abstract class BaseFileDownload extends Object {
 					FDTools::clearHeaders($response); // Delete all headers
 					$this->transferredBytes = 0;
 					$this->onBeforeDownloaderStarts($this,$downloader);
-					$downloader->download($request, $response, $this); // Start download
+					$downloader->download($this, $request, $response); // Start download
 					$this->onComplete($this,$downloader);
 					die(); // If all gone ok -> die
-				} catch (FDSkypeMeException $e) {
+				} catch (FDSkipMeException $e) {
 					if($response->isSent()) {
 						throw new InvalidStateException("Headers are already sent! Can't skip downloader.");
-					} else {
-						continue;
 					}
+					continue;
+
 				} catch (Exception $e) {
-					if(!$response->isSent())
+					if (!$response->isSent())
 						FDTools::clearHeaders($response);
 					throw $e;
 				}
 			}
 		}
 
-		// Pokud se soubor nějakým způsobem odešle - toto už se nespustí
+		// Error handling:
 		if($lastException instanceof Exception) {
 			FDTools::clearHeaders($response,TRUE);
 			throw $lastException;
 		}
 
-		if($request->getHeader('Range'))
+		if($request->getHeader('Range')) {
 			FDTools::_HTTPError($response, 416); // Požadavek na range
-		else
+		} else {
 			$response->setCode(500);
+		}
+
 		throw new InvalidStateException('There is no compatible downloader (all downloader returns downloader->isComplatible()=false or was skipped)!');
 	}
 }
@@ -616,7 +603,7 @@ class FileDownloaderException extends Exception {
 /**
  * When downloader throws this exception -> it will be skipped
  */
-class FDSkypeMeException extends Exception {
+class FDSkipMeException extends Exception {
 
 }
 

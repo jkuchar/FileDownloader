@@ -65,6 +65,9 @@ class FileDownload extends BaseFileDownload {
 	 * @return FileDownload
 	 */
 	public static function getInstance() {
+
+		trigger_error('Use new FileDownload() instead.', E_USER_DEPRECATED);
+
 		return new FileDownload();
 	}
 

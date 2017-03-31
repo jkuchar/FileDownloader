@@ -86,13 +86,13 @@ class AdvancedDownloader extends BaseDownloader {
 	 */
 	protected $sleep;
 
-	public function download(Request $request, Response $response, BaseFileDownload $transfer) {
-		$this->currentTransfer = $transfer;
-		$this->sendStandardFileHeaders($request, $response, $transfer,$this);
+	public function download(BaseFileDownload $file, Request $request, Response $response) {
+		$this->currentTransfer = $file;
+		$this->sendStandardFileHeaders($request, $response, $file,$this);
 
 		@ignore_user_abort(true); // For onAbort event
 
-		$filesize = $this->size   = $transfer->sourceFileSize;
+		$filesize = $this->size   = $file->sourceFileSize;
 		$this->length = $this->size; // Content-length
 		$this->start  = 0;
 		$this->end    = $this->size - 1;
@@ -179,20 +179,20 @@ class AdvancedDownloader extends BaseDownloader {
 
 		/* ### Call callbacks ### */
 
-		$transfer->onBeforeOutputStarts($transfer,$this);
+		$file->onBeforeOutputStarts($file,$this);
 		if ($this->start > 0) {
-			$transfer->onTransferContinue($transfer, $this);
+			$file->onTransferContinue($file, $this);
 		} else {
-			$transfer->onNewTransferStart($transfer, $this);
+			$file->onNewTransferStart($file, $this);
 		}
 
 		/* ### Send file to browser - document body ### */
 
 		$buffer = FDTools::$readFileBuffer;
 		$sleep = false;
-		if(is_int($transfer->speedLimit) && $transfer->speedLimit>0) {
+		if(is_int($file->speedLimit) && $file->speedLimit>0) {
 			$sleep  = true;
-			$buffer = (int)round($transfer->speedLimit);
+			$buffer = (int)round($file->speedLimit);
 		}
 		$this->sleep = $sleep;
 
@@ -207,7 +207,7 @@ class AdvancedDownloader extends BaseDownloader {
 
 
 
-		$fp = fopen($transfer->sourceFile, 'rb');
+		$fp = fopen($file->sourceFile, 'rb');
 		// TODO: Add flock() READ
 		if (!$fp) {
 			throw new InvalidStateException("Can't open file for reading!");
@@ -293,7 +293,7 @@ class AdvancedDownloader extends BaseDownloader {
 				throw new Exception('cUrl error number ' .curl_errno($ch). ': ' .curl_error($ch));
 			}
 			return true;
-		}else{
+		} else {
 			return false;
 		}
 	}
