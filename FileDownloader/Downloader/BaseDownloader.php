@@ -56,10 +56,11 @@ use Nette\Object;
 abstract class BaseDownloader extends Object implements IDownloader {
 	/**
 	 * Sends a standard headers for file download
-	 * @param Request $request
-	 * @param Response $rCesponse
-	 * @param BaseFileDownload $file File
-	 * @param BaseDownloader $downloader Downloader of the file
+	 * @param Request          $request
+	 * @param Response         $rCesponse
+	 * @param BaseFileDownload $file       File
+	 * @param BaseDownloader   $downloader Downloader of the file
+	 * @throws \Nette\InvalidStateException If headers already sent
 	 */
 	protected function sendStandardFileHeaders(Request $request, Response $response, BaseFileDownload $file, BaseDownloader $downloader=null) {
 		//FDTools::clearHeaders($res); // Voláno už v FileDownload.php
@@ -67,7 +68,7 @@ abstract class BaseDownloader extends Object implements IDownloader {
 		$response->setContentType($file->mimeType, 'UTF-8');
 		$response->setHeader('X-File-Downloader', 'File Downloader (http://filedownloader.projekty.mujserver.net)');
 		if ($downloader !== null) {
-			$response->setHeader('X-FileDownloader-Actual-Script', $downloader->getReflection()->name);
+			$response->setHeader('X-FileDownloader-Actual-Script', $downloader::getReflection()->name);
 		}
 
 		$response->setHeader('Pragma', 'public'); // Fix for IE - Content-Disposition
@@ -93,7 +94,7 @@ abstract class BaseDownloader extends Object implements IDownloader {
 			$response->setCode(Response::S304_NOT_MODIFIED);
 			//header("HTTP/1.1 304 Not Modified");
 			exit();
-		};
+		}
 	}
 
 	protected function setupNonCacheHeaders(Response $response, BaseFileDownload $file) {
