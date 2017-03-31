@@ -36,6 +36,8 @@
  * @link       http://filedownloader.projekty.mujserver.net
  */
 
+// todo: Split request parsing
+
 // TODO: Floating buffer (buffer size changing dynamically by the speed of client)
 // TODO: Add custom priority of download modules
 // TODO: Move from float to strings and use bcmath for computations
@@ -43,9 +45,10 @@
 namespace FileDownloader\Downloader;
 
 use Exception;
-use FileDownloader\BaseFileDownload;
-use FileDownloader\FDTools;
+use FileDownloader\FileDownload;
+use FileDownloader\Tools;
 use FileDownloader\FileDownloaderException;
+use FileDownloader\IDownloader;
 use Nette\Http\Request;
 use Nette\Http\Response;
 use Nette\InvalidArgumentException;
@@ -58,6 +61,15 @@ use Nette\InvalidStateException;
  * @author      Jan Kuchař
  * @copyright   Copyright (c) 2014 Jan Kuchar
  * @author      Jan Kuchař
+ *
+ * Callbacks:
+ * @method void onBeforeOutputStarts(FileDownload $fileDownload, IDownloader $downloader)
+ * @method void onStatusChange(FileDownload $fileDownload, IDownloader $downloader)
+ * @method void onComplete(FileDownload $fileDownload, IDownloader $downloader)
+ * @method void onTransferContinue(FileDownload $fileDownload, IDownloader $downloader)
+ * @method void onNewTransferStart(FileDownload $fileDownload, IDownloader $downloader)
+ * @method void onAbort(FileDownload $fileDownload, IDownloader $downloader)
+ * @method void onConnectionLost(FileDownload $fileDownload, IDownloader $downloader)
  */
 class AdvancedDownloader extends BaseDownloader {
 	/**
@@ -74,7 +86,7 @@ class AdvancedDownloader extends BaseDownloader {
 	public $transferred = 0;
 
 	/**
-	 * @var BaseFileDownload
+	 * @var FileDownload
 	 */
 	public $currentTransfer;
 
@@ -86,13 +98,13 @@ class AdvancedDownloader extends BaseDownloader {
 	 */
 	protected $sleep;
 
-	public function download(Request $request, Response $response, BaseFileDownload $transfer) {
-		$this->currentTransfer = $transfer;
-		$this->sendStandardFileHeaders($request, $response, $transfer,$this);
+	public function download(FileDownload $file, Request $request, Response $response) {
+		$this->currentTransfer = $file;
+		$this->sendStandardFileHeaders($request, $response, $file,$this);
 
 		@ignore_user_abort(true); // For onAbort event
 
-		$filesize = $this->size   = $transfer->sourceFileSize;
+		$filesize = $this->size   = $file->sourceFileSize;
 		$this->length = $this->size; // Content-length
 		$this->start  = 0;
 		$this->end    = $this->size - 1;
@@ -165,7 +177,7 @@ class AdvancedDownloader extends BaseDownloader {
 			} catch (FileDownloaderException $e) {
 				if ($e->getCode() === 416) {
 					$response->setHeader('Content-Range', "bytes $this->start-$this->end/$this->size");
-					FDTools::_HTTPError($response, 416);
+					Tools::_HTTPError($response, 416);
 				} else {
 					throw $e;
 				}
@@ -179,27 +191,27 @@ class AdvancedDownloader extends BaseDownloader {
 
 		/* ### Call callbacks ### */
 
-		$transfer->onBeforeOutputStarts($transfer,$this);
+		$this->onBeforeOutputStarts($file,$this);
 		if ($this->start > 0) {
-			$transfer->onTransferContinue($transfer, $this);
+			$this->onTransferContinue($file, $this);
 		} else {
-			$transfer->onNewTransferStart($transfer, $this);
+			$this->onNewTransferStart($file, $this);
 		}
 
 		/* ### Send file to browser - document body ### */
 
-		$buffer = FDTools::$readFileBuffer;
+		$buffer = Tools::$readFileBuffer;
 		$sleep = false;
-		if(is_int($transfer->speedLimit) && $transfer->speedLimit>0) {
+		if(is_int($file->speedLimit) && $file->speedLimit>0) {
 			$sleep  = true;
-			$buffer = (int)round($transfer->speedLimit);
+			$buffer = (int)round($file->speedLimit);
 		}
 		$this->sleep = $sleep;
 
 		if ($buffer < 1) {
 			throw new InvalidArgumentException('Buffer must be bigger than zero!');
 		}
-		$availableMem = FDTools::getAvailableMemory();
+		$availableMem = Tools::getAvailableMemory();
 		if ($availableMem && $buffer > ($availableMem - memory_get_usage())) {
 			throw new InvalidArgumentException('Buffer is too big! (bigger than available memory)');
 		}
@@ -207,7 +219,7 @@ class AdvancedDownloader extends BaseDownloader {
 
 
 
-		$fp = fopen($transfer->sourceFile, 'rb');
+		$fp = fopen($file->sourceFile, 'rb');
 		// TODO: Add flock() READ
 		if (!$fp) {
 			throw new InvalidStateException("Can't open file for reading!");
@@ -218,10 +230,11 @@ class AdvancedDownloader extends BaseDownloader {
 
 
 		if(fseek($fp, $this->start, SEEK_SET) === -1) { // Move file pointer to the start of the download
-			// Can not move pointer to begining of the filetransfer
+			// Can not move pointer to beginning of the filetransfer
 
 			if($this->processByCUrl() === true) {
 				// Request was hadled by curl, clean, exit
+				$this->onComplete($file, $this);
 				$this->cleanAfterTransfer();
 				return;
 			}
@@ -238,12 +251,13 @@ class AdvancedDownloader extends BaseDownloader {
 				$this->position += strlen(fread($fp, min($maxBuffer, $this->start-$this->position)));
 			}
 		}else{
-			// We are at the begining
+			// We are at the beginning
 			$this->position = $this->start;
 		}
 
 		$this->processNative($fp);
 		$this->cleanAfterTransfer();
+		$this->onComplete($file, $this);
 	}
 
 	protected function cleanAfterTransfer() {
@@ -276,26 +290,23 @@ class AdvancedDownloader extends BaseDownloader {
 	}
 
 	protected function processByCUrl() {
-		if(function_exists('curl_init')) { // Curl available
+		if(!function_exists('curl_init')) {return false;}
 
-			$transfer = $this->currentTransfer;
+		$transfer = $this->currentTransfer;
 
-			$ch = curl_init('file://' . realpath($transfer->sourceFile));
-			$range = $this->start.'-'.$this->end; // HTTP range
-			curl_setopt($ch, CURLOPT_RANGE, $range);
-			curl_setopt($ch, CURLOPT_BINARYTRANSFER, 1);
-			curl_setopt($ch, CURLOPT_BUFFERSIZE, $this->buffer);
-			curl_setopt($ch, CURLOPT_WRITEFUNCTION, array($this,
-				'_curlProcessBlock'
-			));
-			$curlRet = curl_exec($ch);
-			if($curlRet === false) {
-				throw new Exception('cUrl error number ' .curl_errno($ch). ': ' .curl_error($ch));
-			}
-			return true;
-		}else{
-			return false;
+		$ch = curl_init('file://' . realpath($transfer->sourceFile));
+		$range = $this->start.'-'.$this->end; // HTTP range
+		curl_setopt($ch, CURLOPT_RANGE, $range);
+		curl_setopt($ch, CURLOPT_BINARYTRANSFER, 1);
+		curl_setopt($ch, CURLOPT_BUFFERSIZE, $this->buffer);
+		curl_setopt($ch, CURLOPT_WRITEFUNCTION, array($this,
+			'_curlProcessBlock'
+		));
+		$curlRet = curl_exec($ch);
+		if($curlRet === false) {
+			throw new Exception('cUrl error number ' .curl_errno($ch). ': ' .curl_error($ch));
 		}
+		return true;
 	}
 
 	/**
@@ -332,15 +343,15 @@ class AdvancedDownloader extends BaseDownloader {
 			if ($fp) {
 				fclose($fp);
 			}
-			$transfer->onConnectionLost($transfer,$this);
+			$this->onConnectionLost($transfer,$this);
 			if(connection_aborted()) {
-				$transfer->onAbort($transfer,$this);
+				$this->onAbort($transfer,$this);
 			}
 			die();
 		}
 		if($this->sleep === true || $tmpTime<=time()) {
 			$transfer->transferredBytes = $this->transferred = $this->position-$this->start;
-			$transfer->onStatusChange($transfer,$this);
+			$this->onStatusChange($transfer,$this);
 			if ($tmpTime !== NULL) {
 				$tmpTime = time() + 1;
 			}
@@ -364,16 +375,167 @@ class AdvancedDownloader extends BaseDownloader {
 
 	/**
 	 * Is this downloader compatible?
-	 * @param BaseFileDownload $file
+	 * @param FileDownload $file
 	 * @return bool TRUE if is compatible; FALSE if not
 	 */
-	public function isCompatible(BaseFileDownload $file) {
+	public function isCompatible(FileDownload $file) {
 		if(self::$checkEnvironmentSettings === true) {
-			if (FDTools::setTimeLimit(0) !== true) {
+			if (Tools::setTimeLimit(0) !== true) {
 				return false;
 			}
 		}
 		return true;
 	}
+
+
+
+
+	/**
+	 * Callback - before is send first bit of file to browser
+	 * First parameter will be this file
+	 * Second parameter will be downloader object
+	 *  NOTE: This callback must be supported by downloader!
+	 * @var array
+	 */
+	public $onBeforeOutputStarts = array();
+
+	/**
+	 * Adds onBeforeOutputStarts callback
+	 * @param callback $callback Callback
+	 * @return void
+	 */
+	public function addBeforeOutputStartsCallback($callback) {
+		$this->addCallback(__METHOD__, $callback);
+	}
+
+	/**
+	 * Callback - when status changes
+	 * First parameter will be this file
+	 * Second parameter will be downloader object
+	 *  NOTE: This callback must be supported by downloader!
+	 * @var array
+	 */
+	public $onStatusChange = array();
+
+	/**
+	 * Adds StatusChange callback
+	 * @param callback $callback Callback
+	 * @return void
+	 */
+	public function addStatusChangeCallback($callback) {
+		$this->addCallback(__METHOD__, $callback);
+	}
+
+	/**
+	 * Callback - when file download completed
+	 * First parameter will be this file
+	 * Second parameter will be downloader object
+	 * @var array
+	 */
+	public $onComplete = array();
+
+	/**
+	 * Adds Complete callback
+	 * @param callback $callback Callback
+	 * @return void
+	 */
+	public function addCompleteCallback($callback) {
+		$this->addCallback(__METHOD__, $callback);
+	}
+
+	/**
+	 * Callback - when file download has been corrupted/stopped and now
+	 * again conected and wants only part of the file.
+	 * Called after - onBeforeOutputStarts
+	 * First parameter will be this file
+	 * Second parameter will be downloader object
+	 *  NOTE: This callback must be supported by downloader!
+	 * @var array
+	 */
+	public $onTransferContinue = array();
+
+	/**
+	 * Adds TransferContinue callback
+	 * @param callback $callback Callback
+	 * @return void
+	 */
+	public function addTransferContinueCallback($callback) {
+		$this->addCallback(__METHOD__, $callback);
+	}
+
+	/**
+	 * Callback - when new file download starts (from the begining)
+	 * Called after - onBeforeOutputStarts
+	 * First parameter will be this file
+	 * Second parameter will be downloader object
+	 *  NOTE: This callback must be supported by downloader!
+	 * @var array
+	 */
+	public $onNewTransferStart = array();
+
+	/**
+	 * Adds NewTransferStart callback
+	 * @param callback $callback Callback
+	 * @return void
+	 */
+	public function addNewTransferStartCallback($callback) {
+		$this->addCallback(__METHOD__, $callback);
+	}
+
+	/**
+	 * Callback - when browser disconnects from server (abort)
+	 * First parameter will be this file
+	 * Second parameter will be downloader object
+	 *  NOTE: This callback must be supported by downloader!
+	 * @var array
+	 */
+	public $onAbort = array();
+
+	/**
+	 * Adds Abort callback
+	 * @param callback $callback Callback
+	 * @return void
+	 */
+	public function addAbortCallback($callback) {
+		$this->addCallback(__METHOD__, $callback);
+	}
+
+	/**
+	 * Callback - when browser disconnects from server (abort,timeout)
+	 * First parameter will be this file
+	 * Second parameter will be downloader object
+	 *  NOTE: This callback must be supported by downloader!
+	 * @var array
+	 */
+	public $onConnectionLost = array();
+
+	/**
+	 * Adds ConnectionError callback
+	 * @param callback $callback Callback
+	 * @return void
+	 */
+	public function addConnectionLostCallback($callback) {
+		$this->addCallback(__METHOD__, $callback);
+	}
+
+	/**
+	 * Adds callback
+	 * @param string $name          Name of callback
+	 * @param callback $callback    Callback
+	 */
+	private function addCallback($fceName, $callback) {
+		preg_match('/^.*::add(.*)Callback$/', $fceName, $matches);
+		$varName = 'on' .$matches[1];
+		$var = &$this->$varName;
+		$var[] = $callback;
+	}
+
+
+	/**
+	 * How many bytes is sent
+	 * @var int
+	 */
+	public $transferredBytes = 0;
+
 }
 

@@ -54,7 +54,7 @@ use Nette\Object;
  * @copyright   Copyright (c) 2014 Jan Kuchar
  * @author      Jan Kuchař
  */
-class FDTools extends Object {
+class Tools extends Object {
 	const BYTE  = 1;
 	const KILOBYTE = 1024;
 	const MEGABYTE = 1048576;
@@ -62,7 +62,7 @@ class FDTools extends Object {
 	const TERABYTE = 1099511627776;
 
 	/**
-	 * Buffer for FDTools::readfile()
+	 * Buffer for Tools::readfile()
 	 * @var int
 	 */
 	static public $readFileBuffer = 524288; // 512kb
@@ -225,7 +225,7 @@ class FDTools extends Object {
 	 * Sends file to browser. (enhanced readfile())
 	 * This function do not send any headers!
 	 *
-	 * It is strongly recomended to set time limit to zero. ( FDTools::setTimeLimit(0) )
+	 * It is strongly recomended to set time limit to zero. ( Tools::setTimeLimit(0) )
 	 * If time limit gone before file download ends download may be corrupted!
 	 *
 	 * Sources:
@@ -283,10 +283,46 @@ class FDTools extends Object {
 	 * for all files, also those > 4 GB:
 	 * @see http://www.php.net/manual/en/function.filesize.php#102135
 	 * @param string $file
-	 * @return float
+	 * @return \Brick\Math\BigInteger
 	 */
 	public static function filesize($file) {
-		return BigFileTools::fromPath($file)->getSize(true);
+		return BigFileTools\BigFileTools::createDefault()->getFile($file)->getSize();
+	}
+
+	/**
+	 * @param string $file path to file
+	 * @return string mime-type
+	 */
+	public static function detectMimeType($file) {
+		if (extension_loaded('fileinfo') && function_exists('finfo_open')) {
+			if ($finfo = @finfo_open(FILEINFO_MIME)) {
+				$mime = @finfo_file($finfo, $file);
+				@finfo_close($finfo);
+				if (Tools::isValidMimeType($mime)) {
+					return $mime;
+				}
+			}
+		}
+
+		if(function_exists('mime_content_type')) {
+			$mime = mime_content_type($file);
+			if (Tools::isValidMimeType($mime)) {
+				return $mime;
+			}
+		}
+
+		// By file extension from ini file
+		$mimeTypes = parse_ini_file(__DIR__ . DIRECTORY_SEPARATOR . 'mime.ini');
+
+		$extension = pathinfo($file, PATHINFO_EXTENSION);
+		if (array_key_exists($extension, $mimeTypes)) {
+			$mime = $mimeTypes[$extension];
+		}
+		if (Tools::isValidMimeType($mime)) {
+			return $mime;
+		}
+
+		return 'application/octet-stream';
 	}
 
 }

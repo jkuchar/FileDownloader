@@ -38,8 +38,8 @@
 
 namespace FileDownloader\Downloader;
 
-use FileDownloader\BaseFileDownload;
-use FileDownloader\FDTools;
+use FileDownloader\FileDownload;
+use FileDownloader\Tools;
 use FileDownloader\IDownloader;
 use Nette\Http\Request;
 use Nette\Http\Response;
@@ -56,27 +56,28 @@ use Nette\Object;
 abstract class BaseDownloader extends Object implements IDownloader {
 	/**
 	 * Sends a standard headers for file download
-	 * @param Request $request
-	 * @param Response $rCesponse
-	 * @param BaseFileDownload $file File
+	 * @param Request        $request
+	 * @param Response       $rCesponse
+	 * @param FileDownload   $file       File
 	 * @param BaseDownloader $downloader Downloader of the file
+	 * @throws \Nette\InvalidStateException If headers already sent
 	 */
-	protected function sendStandardFileHeaders(Request $request, Response $response, BaseFileDownload $file, BaseDownloader $downloader=null) {
-		//FDTools::clearHeaders($res); // Voláno už v FileDownload.php
+	protected function sendStandardFileHeaders(Request $request, Response $response, FileDownload $file, BaseDownloader $downloader=null) {
+		//Tools::clearHeaders($res); // Voláno už v FileDownload.php
 
 		$response->setContentType($file->mimeType, 'UTF-8');
 		$response->setHeader('X-File-Downloader', 'File Downloader (http://filedownloader.projekty.mujserver.net)');
 		if ($downloader !== null) {
-			$response->setHeader('X-FileDownloader-Actual-Script', $downloader->getReflection()->name);
+			$response->setHeader('X-FileDownloader-Actual-Script', $downloader::getReflection()->name);
 		}
 
 		$response->setHeader('Pragma', 'public'); // Fix for IE - Content-Disposition
-		$response->setHeader('Content-Disposition', $file->getContentDisposition() . '; filename="' . FDTools::getContentDispositionHeaderData($request, $file->transferFileName) . '"');
+		$response->setHeader('Content-Disposition', $file->getContentDisposition() . '; filename="' . Tools::getContentDispositionHeaderData($request, $file->transferFileName) . '"');
 		$response->setHeader('Content-Description', 'File Transfer');
 		$response->setHeader('Content-Transfer-Encoding', 'binary');
 		$response->setHeader('Connection', 'close');
-		$response->setHeader('ETag', FDTools::getETag($file->sourceFile));
-		$response->setHeader('Content-Length', FDTools::filesize($file->sourceFile));
+		$response->setHeader('ETag', Tools::getETag($file->sourceFile));
+		$response->setHeader('Content-Length', Tools::filesize($file->sourceFile));
 
 		// Cache control
 		if ($file->enableBrowserCache) {
@@ -86,17 +87,17 @@ abstract class BaseDownloader extends Object implements IDownloader {
 		}
 	}
 
-	protected function setupCacheHeaders(Response $response, BaseFileDownload $file) {
+	protected function setupCacheHeaders(Response $response, FileDownload $file) {
 		$response->setExpiration(time() + 99999999);
 		$response->setHeader('Last-Modified', 'Mon, 23 Jan 1978 10:00:00 GMT');
 		if (!empty($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
 			$response->setCode(Response::S304_NOT_MODIFIED);
 			//header("HTTP/1.1 304 Not Modified");
 			exit();
-		};
+		}
 	}
 
-	protected function setupNonCacheHeaders(Response $response, BaseFileDownload $file) {
+	protected function setupNonCacheHeaders(Response $response, FileDownload $file) {
 		$response->setHeader('Expires', '0');
 		$response->setHeader('Cache-Control', 'must-revalidate, post-check=0, pre-check=0');
 	}

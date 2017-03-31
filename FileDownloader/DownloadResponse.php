@@ -52,7 +52,7 @@ use Nette\Http\Session;
  * @copyright   Copyright (c) 2014 Jan Kuchar
  * @author      Jan Kuchař
  */
-class AppFileDownload extends BaseFileDownload implements \Nette\Application\IResponse {
+class DownloadResponse implements \Nette\Application\IResponse {
 
 	/**
 	 * Downloader used to download file (optional)
@@ -75,24 +75,26 @@ class AppFileDownload extends BaseFileDownload implements \Nette\Application\IRe
 	 */
 	private $session;
 
-	public function __construct(Request $request, Response $response, Session $session) {
-		parent::__construct();
+	/**
+	 * @var \FileDownloader\FileDownload
+	 */
+	private $fileDownload;
+
+	public function __construct(IDownloader $downloader, FileDownload $fileDownload, Request $request, Response $response, Session $session) {
 		$this->request = $request;
 		$this->response = $response;
 		$this->session = $session;
+		$this->downloader = $downloader;
+		$this->fileDownload = $fileDownload;
 	}
 
-	public function setDownloader(IDownloader $downloader) {
-		$this->downloader = $downloader;
-	}
 
 	/* Implementation of IPresenterResponse::send() */
 	public function send(IRequest $httpRequest, IResponse $httpResponse) {
-		parent::download($this->downloader, $this->request, $this->response, $this->session);
-	}
-
-	public function download(IDownloader $downloader = null, Request $request, Response $response, Session $session) {
-		throw new \LogicException('Use Presenter::sendResponse() to send response to client.');
+		if($this->session->isStarted()) {
+			$this->session->close();
+		}
+		$this->downloader->download($this->fileDownload, $this->request, $this->response);
 	}
 
 }
