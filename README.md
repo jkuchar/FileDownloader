@@ -2,6 +2,8 @@ File Downloader
 ===============
 [![Code Climate](https://codeclimate.com/github/jkuchar/FileDownloader/badges/gpa.svg)](https://codeclimate.com/github/jkuchar/FileDownloader)
 
+**abandoned** Please use [Nette\Application\Responses\FileResponse](https://api.nette.org/2.4/Nette.Application.Responses.FileResponse.html) instead. Of if you are looking for hi-speed solution take a look at [X-Accel/NGINX](https://www.nginx.com/resources/wiki/start/topics/examples/x-accel/) or [X-Sendfile/Apache](https://tn123.org/mod_xsendfile/).
+
 Addon makes controlled downloads of files peace of cake. It supports **client reconnections**, **segmented downloading**, files **over 4GB**, automatic **mime-type detection** and **special characters** in file names. If you need to **control download speed** you are on the right site.
 
 - License: New BSD License
