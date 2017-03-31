@@ -91,12 +91,6 @@ use Nette\Object;
  */
 abstract class BaseFileDownload extends Object {
 
-	/**
-	 * Transfer identificator
-	 * @var string
-	 */
-	private $vTransferID;
-
 	const CONTENT_DISPOSITION_ATTACHMENT = 'attachment';
 	const CONTENT_DISPOSITION_INLINE = 'inline';
 
@@ -304,22 +298,20 @@ abstract class BaseFileDownload extends Object {
 		return $this;
 	}
 
-	public function  __construct() {
-		$this->vTransferID = time(). '-' .mt_rand();
-	}
-
 	/**
 	 * Get transfer identificator
 	 * @return string
+	 * @deprecated
 	 */
 	public function getTransferId() {
-		return $this->vTransferID;
+		return spl_object_hash($this);
 	}
 
 	/**
 	 * Setts location of source file
 	 * @param string $location Location of the source file
 	 * @return BaseFileDownload
+	 * @deprecated
 	 */
 	public function setSourceFile($location) {
 		if($location === null) {
