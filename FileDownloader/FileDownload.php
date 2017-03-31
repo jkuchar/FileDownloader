@@ -76,7 +76,6 @@ use Nette\Object;
  * @property int $transferredBytes      How many bytes was sent to browser
  * @property int $contentDisposition    Content disposition: inline or attachment
  * @property-read float $sourceFileSize   File size
- * @property-read int $transferID       TransferId
  */
 class FileDownload extends Object {
 
@@ -234,37 +233,7 @@ class FileDownload extends Object {
 			return $this->vMimeType;
 		}
 
-		$mime = "";
-		if (extension_loaded('fileinfo') && function_exists('finfo_open')) {
-			//TODO: test this code:
-			if ($finfo = @finfo_open(FILEINFO_MIME)) {
-				$mime = @finfo_file($finfo, $this->sourceFile);
-				@finfo_close($finfo);
-				if (FDTools::isValidMimeType($mime)) {
-					return $mime;
-				}
-			}
-		}
-
-		if(function_exists('mime_content_type')) {
-			$mime = mime_content_type($this->sourceFile);
-			if (FDTools::isValidMimeType($mime)) {
-				return $mime;
-			}
-		}
-
-		// By file extension from ini file
-		$mimeTypes = parse_ini_file(__DIR__ . DIRECTORY_SEPARATOR . 'mime.ini');
-
-		$extension = pathinfo($this->sourceFile, PATHINFO_EXTENSION);
-		if (array_key_exists($extension, $mimeTypes)) {
-			$mime = $mimeTypes[$extension];
-		}
-		if (FDTools::isValidMimeType($mime)) {
-			return $mime;
-		}
-
-		return 'application/octet-stream';
+		return FDTools::detectMimeType($this->vSourceFile);
 	}
 
 	/**

@@ -289,6 +289,42 @@ class FDTools extends Object {
 		return BigFileTools\BigFileTools::createDefault()->getFile($file)->getSize();
 	}
 
+	/**
+	 * @param string $file path to file
+	 * @return string mime-type
+	 */
+	public static function detectMimeType($file) {
+		if (extension_loaded('fileinfo') && function_exists('finfo_open')) {
+			if ($finfo = @finfo_open(FILEINFO_MIME)) {
+				$mime = @finfo_file($finfo, $file);
+				@finfo_close($finfo);
+				if (FDTools::isValidMimeType($mime)) {
+					return $mime;
+				}
+			}
+		}
+
+		if(function_exists('mime_content_type')) {
+			$mime = mime_content_type($file);
+			if (FDTools::isValidMimeType($mime)) {
+				return $mime;
+			}
+		}
+
+		// By file extension from ini file
+		$mimeTypes = parse_ini_file(__DIR__ . DIRECTORY_SEPARATOR . 'mime.ini');
+
+		$extension = pathinfo($file, PATHINFO_EXTENSION);
+		if (array_key_exists($extension, $mimeTypes)) {
+			$mime = $mimeTypes[$extension];
+		}
+		if (FDTools::isValidMimeType($mime)) {
+			return $mime;
+		}
+
+		return 'application/octet-stream';
+	}
+
 }
 
 
