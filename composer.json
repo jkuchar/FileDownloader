@@ -11,13 +11,13 @@
 		}
 	],
 	"autoload": {
-		"psr-0": {
-			"FileDownloader": ""
+		"psr-4": {
+			"FileDownloader\\": "src"
 		},
-		"classmap": ["FileDownloader/exceptions.php"]
+		"classmap": ["src/exceptions.php"]
 	},
 	"autoload-dev": {
-		"files": ["FileDownloader/exceptions.php"]
+		"files": ["src/exceptions.php"]
 	},
 	"require": {
 		"php": ">= 5.3.0",
