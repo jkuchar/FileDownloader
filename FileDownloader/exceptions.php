@@ -32,3 +32,15 @@ final class FilesystemException extends RuntimeException {
 		return new self ('Cannot perform realpath, check your filesystem permissions.');
 	}
 }
+
+class CouldNotProcessRequest extends RuntimeException {
+
+}
+
+	class MultipartRequestNotSupported extends CouldNotProcessRequest {
+
+	}
+
+	class RangeNotSatifiableException extends CouldNotProcessRequest {
+
+	}
