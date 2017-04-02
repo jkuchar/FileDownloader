@@ -1,41 +1,5 @@
 <?php
 
-/**
- * Copyright (c) 2009, Jan Kuchař
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms,
- * with or without modification, are permitted provided
- * that the following conditions are met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *     * Neither the name of the Mujserver.net nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @author     Jan Kuchař
- * @copyright  Copyright (c) 2014 Jan Kuchar (http://mujserver.net)
- * @license    New BSD License
- * @link       http://filedownloader.projekty.mujserver.net
- */
-
 namespace FileDownloader;
 
 use BigFileTools;
@@ -46,14 +10,7 @@ use Nette\InvalidArgumentException;
 use Nette\InvalidStateException;
 use Nette\Object;
 
-/**
- *
- * @link http://filedownloader.projekty.mujserver.net
- *
- * @author      Jan Kuchař
- * @copyright   Copyright (c) 2014 Jan Kuchar
- * @author      Jan Kuchař
- */
+
 class Tools extends Object {
 	const BYTE  = 1;
 	const KILOBYTE = 1024;
@@ -175,7 +132,7 @@ class Tools extends Object {
 	public static function getContentDispositionHeaderData(Request $request, $basename) {
 		$basename = basename($basename);
 		$userAgent = $request->getHeader('User-Agent');
-		if ($userAgent && strstr($userAgent, 'MSIE')) {
+		if ($userAgent && FALSE !== strpos($userAgent, 'MSIE')) {
 			// workaround for IE filename bug with multiple periods / multiple dots in filename
 			// that adds square brackets to filename - eg. setup.abc.exe becomes setup[1].abc.exe
 			$iefilename = preg_replace('/\./', '%2e', $basename, substr_count($basename, '.') - 1);
@@ -189,11 +146,11 @@ class Tools extends Object {
 	 * Sends http error to client
 	 *
 	 * @author Jan Kuchař
-	 * @param Response $response
+	 * @param IResponse $response
 	 * @param int $code HTTP code
 	 * @param string $message HTTP status
 	 */
-	public static function _HTTPError(Response $response, $code, $message=null) {
+	public static function sendHttpError(IResponse $response, $code, $message=null) {
 		$errors = array(
 			416=> 'Requested Range not satisfiable'
 		);

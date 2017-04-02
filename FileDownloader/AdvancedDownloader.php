@@ -1,66 +1,28 @@
 <?php
 
-/**
- * Copyright (c) 2009, Jan Kuchař
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms,
- * with or without modification, are permitted provided
- * that the following conditions are met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *     * Neither the name of the Mujserver.net nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @author     Jan Kuchař
- * @copyright  Copyright (c) 2014 Jan Kuchar (http://mujserver.net)
- * @license    New BSD License
- * @link       http://filedownloader.projekty.mujserver.net
- */
-
-// todo: Split request parsing
+// TODO: Split request parsing
+// TODO: abstraction: sending blocks (do not care where from they come)
 
 // TODO: Floating buffer (buffer size changing dynamically by the speed of client)
 // TODO: Add custom priority of download modules
 // TODO: Move from float to strings and use bcmath for computations
 
-namespace FileDownloader\Downloader;
+namespace FileDownloader;
 
 use Exception;
+use FileDownloader\DownloaderNotSupported;
 use FileDownloader\FileDownload;
-use FileDownloader\Tools;
 use FileDownloader\FileDownloaderException;
 use FileDownloader\IDownloader;
-use Nette\Http\Request;
+use FileDownloader\Tools;
+use Nette\Http\IRequest;
+use Nette\Http\IResponse;
 use Nette\Http\Response;
 use Nette\InvalidArgumentException;
 use Nette\InvalidStateException;
 
 /**
- *
- * @link http://filedownloader.projekty.mujserver.net
- *
- * @author      Jan Kuchař
- * @copyright   Copyright (c) 2014 Jan Kuchar
- * @author      Jan Kuchař
+ * File downloader with support for file speed regulation and reconnection.
  *
  * Callbacks:
  * @method void onBeforeOutputStarts(FileDownload $fileDownload, IDownloader $downloader)
@@ -71,7 +33,8 @@ use Nette\InvalidStateException;
  * @method void onAbort(FileDownload $fileDownload, IDownloader $downloader)
  * @method void onConnectionLost(FileDownload $fileDownload, IDownloader $downloader)
  */
-class AdvancedDownloader extends BaseDownloader {
+class AdvancedDownloader implements IDownloader {
+
 	/**
 	 * Check for environment configuration?
 	 * @var bool
@@ -98,13 +61,18 @@ class AdvancedDownloader extends BaseDownloader {
 	 */
 	protected $sleep;
 
-	public function download(FileDownload $file, Request $request, Response $response) {
+	public function start(FileDownload $file, IRequest $request, IResponse $response) {
+		if(!$this->isCompatible($file)) {
+			throw new DownloaderNotSupported('Please check you P');
+		}
+
 		$this->currentTransfer = $file;
 		$this->sendStandardFileHeaders($request, $response, $file,$this);
 
 		@ignore_user_abort(true); // For onAbort event
 
-		$filesize = $this->size   = $file->sourceFileSize;
+		$sourceFile = $file->getSourceFile();
+		$filesize = $this->size   = $sourceFile;
 		$this->length = $this->size; // Content-length
 		$this->start  = 0;
 		$this->end    = $this->size - 1;
@@ -177,7 +145,7 @@ class AdvancedDownloader extends BaseDownloader {
 			} catch (FileDownloaderException $e) {
 				if ($e->getCode() === 416) {
 					$response->setHeader('Content-Range', "bytes $this->start-$this->end/$this->size");
-					Tools::_HTTPError($response, 416);
+					Tools::sendHttpError($response, 416);
 				} else {
 					throw $e;
 				}
@@ -202,9 +170,11 @@ class AdvancedDownloader extends BaseDownloader {
 
 		$buffer = Tools::$readFileBuffer;
 		$sleep = false;
-		if(is_int($file->speedLimit) && $file->speedLimit>0) {
+
+		$speedLimit = $file->getSpeedLimit();
+		if(is_int($speedLimit) && $speedLimit > 0) {
 			$sleep  = true;
-			$buffer = (int)round($file->speedLimit);
+			$buffer = (int)round($speedLimit);
 		}
 		$this->sleep = $sleep;
 
@@ -217,11 +187,10 @@ class AdvancedDownloader extends BaseDownloader {
 		}
 		$this->buffer = $buffer;
 
-
-
-		$fp = fopen($file->sourceFile, 'rb');
+		/** @noinspection ReturnFalseInspection checked later */
+		$fp = fopen($sourceFile, 'rb');
 		// TODO: Add flock() READ
-		if (!$fp) {
+		if ($fp === FALSE) {
 			throw new InvalidStateException("Can't open file for reading!");
 		}
 		if ($this->end === null) {
@@ -294,7 +263,7 @@ class AdvancedDownloader extends BaseDownloader {
 
 		$transfer = $this->currentTransfer;
 
-		$ch = curl_init('file://' . realpath($transfer->sourceFile));
+		$ch = curl_init('file://' . realpath($transfer->getSourceFile()));
 		$range = $this->start.'-'.$this->end; // HTTP range
 		curl_setopt($ch, CURLOPT_RANGE, $range);
 		curl_setopt($ch, CURLOPT_BINARYTRANSFER, 1);
@@ -385,6 +354,54 @@ class AdvancedDownloader extends BaseDownloader {
 			}
 		}
 		return true;
+	}
+
+	/**
+	 * Sends a standard headers for file download
+	 * @param IRequest        $request
+	 * @param IResponse       $response
+	 * @param FileDownload   $file       File
+	 * @param AdvancedDownloader $downloader Downloader of the file
+	 * @throws \Nette\InvalidStateException If headers already sent
+	 */
+	private function sendStandardFileHeaders(IRequest $request, IResponse $response, FileDownload $file, AdvancedDownloader $downloader=null) {
+		//Tools::clearHeaders($res); // Voláno už v FileDownload.php
+
+		$response->setContentType($file->getMimeType(), 'UTF-8');
+		$response->setHeader('X-File-Downloader', 'File Downloader (https://github.com/jkuchar/FileDownloader)');
+		if ($downloader !== null) {
+			$response->setHeader('X-FileDownloader-Actual-Script', get_class($downloader));
+		}
+
+		$response->setHeader('Pragma', 'public'); // Fix for IE - Content-Disposition
+		$response->setHeader('Content-Disposition', $file->getContentDisposition() . '; filename="' . Tools::getContentDispositionHeaderData($request, $file->getTransferFileName()) . '"');
+		$response->setHeader('Content-Description', 'File Transfer');
+		$response->setHeader('Content-Transfer-Encoding', 'binary');
+		$response->setHeader('Connection', 'close');
+		$response->setHeader('ETag', Tools::getETag($file->getSourceFile()));
+		$response->setHeader('Content-Length', Tools::filesize($file->getSourceFile()));
+
+		// Cache control
+		if ($file->cacheContent) {
+			$this->setupCacheHeaders($response, $file);
+		} else {
+			$this->setupNonCacheHeaders($response, $file);
+		}
+	}
+
+	private function setupCacheHeaders(IResponse $response, FileDownload $file) {
+		$response->setExpiration(time() + 99999999);
+		$response->setHeader('Last-Modified', 'Mon, 23 Jan 1978 10:00:00 GMT');
+		if (!empty($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
+			$response->setCode(Response::S304_NOT_MODIFIED);
+			//header("HTTP/1.1 304 Not Modified");
+			exit();
+		}
+	}
+
+	private function setupNonCacheHeaders(IResponse $response, FileDownload $file) {
+		$response->setHeader('Expires', '0');
+		$response->setHeader('Cache-Control', 'must-revalidate, post-check=0, pre-check=0');
 	}
 
 
