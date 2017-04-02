@@ -10,11 +10,6 @@
 namespace FileDownloader;
 
 use Exception;
-use FileDownloader\DownloaderNotSupported;
-use FileDownloader\FileDownload;
-use FileDownloader\FileDownloaderException;
-use FileDownloader\IDownloader;
-use FileDownloader\Tools;
 use Nette\Http\IRequest;
 use Nette\Http\IResponse;
 use Nette\Http\Response;
@@ -33,7 +28,7 @@ use Nette\InvalidStateException;
  * @method void onAbort(FileDownload $fileDownload, IDownloader $downloader)
  * @method void onConnectionLost(FileDownload $fileDownload, IDownloader $downloader)
  */
-class AdvancedDownloader implements IDownloader {
+final class AdvancedDownloader implements IDownloader {
 
 	/**
 	 * Check for environment configuration?
@@ -51,9 +46,9 @@ class AdvancedDownloader implements IDownloader {
 	/**
 	 * @var FileDownload
 	 */
-	public $currentTransfer;
+	private $currentTransfer;
 
-	protected $buffer;
+	private $buffer;
 
 	/**
 	 * @internal
