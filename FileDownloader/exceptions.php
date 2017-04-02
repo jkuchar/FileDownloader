@@ -26,12 +26,14 @@ final class FileDownloaderException extends \Exception
  */
 final class DownloaderNotSupported extends RuntimeException {}
 
-final class FilesystemException extends RuntimeException {
+class FilesystemException extends RuntimeException {
 	public static function realpathPermissions()
 	{
 		return new self ('Cannot perform realpath, check your filesystem permissions.');
 	}
 }
+
+	final class CannotSeekToPosition extends FilesystemException {}
 
 class CouldNotProcessRequest extends RuntimeException {
 

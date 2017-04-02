@@ -9,7 +9,7 @@
 
 namespace FileDownloader;
 
-use Exception;
+use BlockReader\NativeBlockReader;
 use Nette\Http\IRequest;
 use Nette\Http\IResponse;
 use Nette\Http\Response;
@@ -44,12 +44,18 @@ final class AdvancedDownloader implements IDownloader {
 	private $transferred = 0;
 	/** @var FileDownload */
 	private $currentTransfer;
+	/** @var int */
 	private $buffer;
 	/** @var boolean */
 	private $sleep;
 	/** @var boolean */
 	private $partial;
 
+	/**
+	 * How many bytes is sent
+	 * @var int
+	 */
+	public $transferredBytes = 0;
 
 
 	public function start(FileDownload $file, IRequest $request, IResponse $response) {
@@ -115,148 +121,43 @@ final class AdvancedDownloader implements IDownloader {
 			$this->end = $this->size - 1;
 		}
 
+		$blockReader = new NativeBlockReader($fp, $this->start, $this->end, $this->buffer);
+		$blockReader->start(function($readBlock, $position) {
+			$transfer = $this->currentTransfer;
 
-		if(fseek($fp, $this->start, SEEK_SET) === -1) { // Move file pointer to the start of the download
-			// Can not move pointer to beginning of the filetransfer
+			echo $readBlock;
+			flush(); // PHP: Do not buffer it - send it to browser!
+			@ob_flush();
 
-			if($this->processByCUrl() === true) {
-				// Request was hadled by curl, clean, exit
-				$this->onComplete($file, $this);
-				$this->cleanAfterTransfer();
-				return;
+			$this->position += strlen($readBlock);
+
+			if(connection_status() !== CONNECTION_NORMAL) {
+				$this->onConnectionLost($transfer,$this);
+				if(connection_aborted()) {
+					$this->onAbort($transfer, $this);
+				}
+				return FALSE;
 			}
 
-			// Use this hack (fread file to start position)
-			$destPos = $this->position = PHP_INT_MAX-1;
-			if(fseek($fp, $this->position, SEEK_SET) === -1) {
-				rewind($fp);
-				$this->position = 0;
-				throw new InvalidStateException("Can not move pointer to position ($destPos)");
-			}
-			$maxBuffer = 1024*1024;
-			while($this->position < $this->start) {
-				$this->position += strlen(fread($fp, min($maxBuffer, $this->start-$this->position)));
-			}
-		}else{
-			// We are at the beginning
-			$this->position = $this->start;
-		}
+			if ($this->sleep === true) {
+				$this->transferredBytes = $this->transferred = $this->position-$this->start;
+				$this->onStatusChange($transfer,$this);
 
-		$this->processNative($fp);
+				sleep(1);
+			}
+
+			return TRUE; // continue normally; same as NULL
+		});
+
+		fclose($fp);
+
 		$this->cleanAfterTransfer();
 		$this->onComplete($file, $this);
 	}
 
 	protected function cleanAfterTransfer() {
-		$this->currentTransfer->transferredBytes = $this->transferred = $this->length;
+		$this->transferredBytes = $this->transferred = $this->length;
 		$this->currentTransfer = null;
-	}
-
-	protected function processNative($fp) {
-		$tmpTime = null;
-		if ($this->sleep === false) {
-			// Call onStatusChange next second!
-			$tmpTime = time() + 1;
-		}
-
-		$buffer = $this->buffer;
-		while(!feof($fp) && $this->position <= $this->end) {
-			if ($this->position + $buffer > $this->end) {
-				// In case we're only outputtin a chunk, make sure we don't
-				// read past the length
-				$buffer = $this->end - $this->position + 1;
-			}
-			$data = fread($fp, $buffer);
-			echo $data;
-			$this->position += strlen($data);
-			unset($data);
-
-			$this->_afterBufferSent($tmpTime, $fp);
-		}
-		fclose($fp);
-	}
-
-	protected function processByCUrl() {
-		if(!function_exists('curl_init')) {return false;}
-
-		$transfer = $this->currentTransfer;
-
-		$ch = curl_init('file://' . realpath($transfer->getSourceFile()));
-		$range = $this->start.'-'.$this->end; // HTTP range
-		curl_setopt($ch, CURLOPT_RANGE, $range);
-		curl_setopt($ch, CURLOPT_BINARYTRANSFER, 1);
-		curl_setopt($ch, CURLOPT_BUFFERSIZE, $this->buffer);
-		curl_setopt($ch, CURLOPT_WRITEFUNCTION, array($this,
-			'_curlProcessBlock'
-		));
-		$curlRet = curl_exec($ch);
-		if($curlRet === false) {
-			throw new Exception('cUrl error number ' .curl_errno($ch). ': ' .curl_error($ch));
-		}
-		return true;
-	}
-
-	/**
-	 * @internal
-	 */
-	public function _curlProcessBlock($ch, $chunk) {
-		static $curl;
-		static $tmpTime;
-
-		if($curl !== $ch) { // Set defaults
-			$tmpTime = null;
-			if ($this->sleep === false) {
-				 // Call onStatusChange next second!
-				$tmpTime = time() + 1;
-			}
-		}
-
-		echo $chunk;
-		$len = strlen($chunk);
-		$this->position += $len;
-
-		$this->_afterBufferSent($tmpTime);
-
-		return $len;
-	}
-
-	protected function _afterBufferSent($tmpTime, $fp=null) {
-		$transfer = $this->currentTransfer;
-
-		flush(); // PHP: Do not buffer it - send it to browser!
-		@ob_flush();
-
-		if(connection_status() !== CONNECTION_NORMAL) {
-			if ($fp) {
-				fclose($fp);
-			}
-			$this->onConnectionLost($transfer,$this);
-			if(connection_aborted()) {
-				$this->onAbort($transfer,$this);
-			}
-			die();
-		}
-		if($this->sleep === true || $tmpTime<=time()) {
-			$transfer->transferredBytes = $this->transferred = $this->position-$this->start;
-			$this->onStatusChange($transfer,$this);
-			if ($tmpTime !== NULL) {
-				$tmpTime = time() + 1;
-			}
-		}
-		if ($this->sleep === true) {
-			sleep(1);
-		}
-	}
-
-	/**
-	 * Is this downloader initialized?
-	 * @return bool
-	 */
-	public function isInitialized() {
-		if ($this->end === 0) {
-			return false;
-		}
-		return true;
 	}
 
 
@@ -265,7 +166,7 @@ final class AdvancedDownloader implements IDownloader {
 	 * @param FileDownload $file
 	 * @return bool TRUE if is compatible; FALSE if not
 	 */
-	public function isCompatible(FileDownload $file) {
+	private function isCompatible(FileDownload $file) {
 		if(self::$checkEnvironmentSettings === true) {
 			if (Tools::setTimeLimit(0) !== true) {
 				return false;
@@ -324,6 +225,95 @@ final class AdvancedDownloader implements IDownloader {
 
 
 
+	/**
+	 * @param IRequest $request
+	 * @param IResponse $response
+	 * @throws FileDownloaderException
+	 * @throws CouldNotProcessRequest
+	 */
+	private function parseRequest(IRequest $request, IResponse $response)
+	{
+		$this->length = $this->size; // Content-length
+		$this->start = 0;
+		$this->end = $this->size - 1;
+		$this->partial = FALSE;
+
+		/* ### Headers ### */
+
+		// Now that we've gotten so far without errors we send the accept range header
+		/* At the moment we only support single ranges.
+		 * Multiple ranges requires some more work to ensure it works correctly
+		 * and comply with the spesifications: http://www.w3.org/Protocols/rfc2616/rfc2616-sec19.html#sec19.2
+		 *
+		 * Multirange support annouces itself with:
+		 * header('Accept-Ranges: bytes');
+		 *
+		 * Multirange content must be sent with multipart/byteranges mediatype,
+		 * (mediatype = mimetype)
+		 * as well as a boundry header to indicate the various chunks of data.
+		 */
+
+		//$res->setHeader("Accept-Ranges", "0-".$this->end); // single-part - now not accepted by mozilla
+		$response->setHeader('Accept-Ranges', 'bytes'); // multi-part (through Mozilla)
+		// http://www.w3.org/Protocols/rfc2616/rfc2616-sec19.html#sec19.2
+
+		if ($request->getHeader('Range', FALSE) === FALSE)
+		{
+			return;
+		}
+
+
+		// If partial download
+		$range_start = $this->start;
+		$range_end = $this->end;
+
+		// Extract the range string
+		$rangeArray = explode('=', $request->getHeader('Range'), 2);
+		$range = $rangeArray[1];
+
+		// Make sure the client hasn't sent us a multibyte range
+		if (strpos($range, ',') !== FALSE) {
+			// (?) Shoud this be issued here, or should the first
+			// range be used? Or should the header be ignored and
+			// we output the whole content?
+			throw new MultipartRequestNotSupported();
+		}
+
+		// If the range starts with an '-' we start from the beginning
+		// If not, we forward the file pointer
+		// And make sure to get the end byte if spesified
+		if ($range{0} === '-') {
+			// The n-number of the last bytes is requested
+			$range_start = $this->size - (float) substr($range, 1);
+		} else {
+			$range = explode('-', $range);
+			$range_start = $range[0];
+			$range_end = (isset($range[1]) && is_numeric($range[1])) ? $range[1] : $this->size;
+		}
+
+		/**
+		 * Check the range and make sure it's treated according to the specs.
+		 * @link http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html
+		 */
+		// End bytes can not be larger than $end.
+		$range_end = ($range_end > $this->end) ? $this->end : $range_end;
+		// Validate the requested range and return an error if it's not correct.
+		if ($range_start > $range_end || $range_start > $this->size - 1 || $range_end >= $this->size) {
+			throw new RangeNotSatifiableException();
+		}
+
+		// All is ok - so assign variables back
+		$this->start = $range_start;
+		$this->end = $range_end;
+		$this->length = $this->end - $this->start + 1; // Calculate new content length
+		$this->partial = TRUE;
+
+	}
+
+
+
+
+	//<editor-fold desc="Callbacks definition">
 
 	/**
 	 * Callback - before is send first bit of file to browser
@@ -464,98 +454,7 @@ final class AdvancedDownloader implements IDownloader {
 		$var = &$this->$varName;
 		$var[] = $callback;
 	}
+	//</editor-fold>
 
-
-	/**
-	 * How many bytes is sent
-	 * @var int
-	 */
-	public $transferredBytes = 0;
-
-
-	/**
-	 * @param IRequest $request
-	 * @param IResponse $response
-	 * @throws FileDownloaderException
-	 * @throws CouldNotProcessRequest
-	 */
-	private function parseRequest(IRequest $request, IResponse $response)
-	{
-		$this->length = $this->size; // Content-length
-		$this->start = 0;
-		$this->end = $this->size - 1;
-		$this->partial = FALSE;
-
-		/* ### Headers ### */
-
-		// Now that we've gotten so far without errors we send the accept range header
-		/* At the moment we only support single ranges.
-		 * Multiple ranges requires some more work to ensure it works correctly
-		 * and comply with the spesifications: http://www.w3.org/Protocols/rfc2616/rfc2616-sec19.html#sec19.2
-		 *
-		 * Multirange support annouces itself with:
-		 * header('Accept-Ranges: bytes');
-		 *
-		 * Multirange content must be sent with multipart/byteranges mediatype,
-		 * (mediatype = mimetype)
-		 * as well as a boundry header to indicate the various chunks of data.
-		 */
-
-		//$res->setHeader("Accept-Ranges", "0-".$this->end); // single-part - now not accepted by mozilla
-		$response->setHeader('Accept-Ranges', 'bytes'); // multi-part (through Mozilla)
-		// http://www.w3.org/Protocols/rfc2616/rfc2616-sec19.html#sec19.2
-
-		if ($request->getHeader('Range', FALSE) === FALSE)
-		{
-			return;
-		}
-
-
-		// If partial download
-		$range_start = $this->start;
-		$range_end = $this->end;
-
-		// Extract the range string
-		$rangeArray = explode('=', $request->getHeader('Range'), 2);
-		$range = $rangeArray[1];
-
-		// Make sure the client hasn't sent us a multibyte range
-		if (strpos($range, ',') !== FALSE) {
-			// (?) Shoud this be issued here, or should the first
-			// range be used? Or should the header be ignored and
-			// we output the whole content?
-			throw new MultipartRequestNotSupported();
-		}
-
-		// If the range starts with an '-' we start from the beginning
-		// If not, we forward the file pointer
-		// And make sure to get the end byte if spesified
-		if ($range{0} === '-') {
-			// The n-number of the last bytes is requested
-			$range_start = $this->size - (float) substr($range, 1);
-		} else {
-			$range = explode('-', $range);
-			$range_start = $range[0];
-			$range_end = (isset($range[1]) && is_numeric($range[1])) ? $range[1] : $this->size;
-		}
-
-		/**
-		 * Check the range and make sure it's treated according to the specs.
-		 * @link http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html
-		 */
-		// End bytes can not be larger than $end.
-		$range_end = ($range_end > $this->end) ? $this->end : $range_end;
-		// Validate the requested range and return an error if it's not correct.
-		if ($range_start > $range_end || $range_start > $this->size - 1 || $range_end >= $this->size) {
-			throw new RangeNotSatifiableException();
-		}
-
-		// All is ok - so assign variables back
-		$this->start = $range_start;
-		$this->end = $range_end;
-		$this->length = $this->end - $this->start + 1; // Calculate new content length
-		$this->partial = TRUE;
-
-	} // End of if partial download
 }
 
